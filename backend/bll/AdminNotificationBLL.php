@@ -43,4 +43,8 @@ class AdminNotificationBLL {
         if ($result) return ['success' => true];
         return ['success' => false, 'message' => 'Failed to delete notification.'];
     }
+
+    public function notify(string $type, string $title, string $message): void {
+        $this->dal->create($type, $title, $message);
+    }
 }

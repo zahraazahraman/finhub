@@ -53,4 +53,16 @@ class AdminNotificationDAL {
         );
         return $stmt->execute([':id' => $id]);
     }
+
+    public function create(string $type, string $title, string $message): bool {
+        $stmt = $this->db->prepare(
+            "INSERT INTO AdminNotifications (type, title, message)
+            VALUES (:type, :title, :message)"
+        );
+        return $stmt->execute([
+            ':type'    => $type,
+            ':title'   => $title,
+            ':message' => $message,
+        ]);
+    }
 }

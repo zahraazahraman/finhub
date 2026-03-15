@@ -18,22 +18,22 @@ export default defineConfig({
       "/api/users": {
         target: "http://localhost",
         changeOrigin: true,
-        rewrite: () => '/FinHub/backend/ws/users/index.php',
+        rewrite: (path) => path.replace('/api/users', '/FinHub/backend/ws/users/index.php'),
       },
       "/api/consultants": {
         target: "http://localhost",
         changeOrigin: true,
-        rewrite: () => '/FinHub/backend/ws/consultants/index.php',
+        rewrite: (path) => path.replace('/api/consultants', '/FinHub/backend/ws/consultants/index.php'),
       },
       "/api/categories": {
         target: "http://localhost",
         changeOrigin: true,
-        rewrite: () => '/FinHub/backend/ws/categories/index.php',
+        rewrite: (path) => path.replace('/api/categories', '/FinHub/backend/ws/categories/index.php'),
       },
       "/api/admin-notifications": {
         target: "http://localhost",
         changeOrigin: true,
-        rewrite: () => '/FinHub/backend/ws/admin-notifications/index.php',
+        rewrite: (path) => path.replace('/api/admin-notifications', '/FinHub/backend/ws/admin-notifications/index.php'),
       },
     },
   },

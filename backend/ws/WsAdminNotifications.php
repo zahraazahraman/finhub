@@ -14,9 +14,11 @@ $action = $parts[1] ?? '';
 
 // GET — get all or unread count or recent
 if ($method === 'GET') {
-    if ($action === 'unread-count') {
+    $path = trim($_SERVER['PATH_INFO'] ?? '/', '/');
+    
+    if ($path === 'unread-count') {
         echo json_encode($bll->getUnreadCount());
-    } elseif ($action === 'recent') {
+    } elseif ($path === 'recent') {
         echo json_encode($bll->getRecent());
     } else {
         echo json_encode($bll->getAll());
