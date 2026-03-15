@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import CategoriesBLL from "../bll/CategoriesBLL.js";
+import { useNotifications } from "../context/NotificationContext.jsx";
 
 const typeStyles = {
   income:  "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
@@ -103,6 +104,8 @@ export default function Categories() {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [actionError, setActionError]   = useState("");
 
+  const { refreshCount } = useNotifications();
+
   const fetchCategories = async () => {
     setLoading(true);
     const result = await CategoriesBLL.getAll();
@@ -120,6 +123,7 @@ export default function Categories() {
     const result = await CategoriesBLL.delete(deleteTarget);
     if (result.success) {
       setCategories((prev) => prev.filter((c) => c.category_id !== deleteTarget));
+      refreshCount();
     } else {
       setActionError(result.error);
     }
@@ -262,7 +266,7 @@ export default function Categories() {
 
       {showModal && (
         <CategoryModal
-          onSave={() => { setShowModal(false); fetchCategories(); }}
+          onSave={() => { setShowModal(false); fetchCategories(); refreshCount(); }}
           onClose={() => setShowModal(false)}
         />
       )}

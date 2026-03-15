@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import UsersBLL from "../bll/UsersBLL.js";
+import { useNotifications } from "../context/NotificationContext.jsx";
 
 const statusStyles = {
   active: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
@@ -44,6 +45,30 @@ function ConfirmModal({ message, onConfirm, onCancel }) {
   );
 }
 
+const exportUsersCSV = (users) => {
+  const headers = ["ID", "First Name", "Last Name", "Email", "Phone", "Status", "Verified", "Joined"];
+  const rows = users.map((u) => [
+    u.user_id,
+    u.first_name,
+    u.last_name,
+    u.email,
+    u.phone_number || "—",
+    u.status,
+    u.email_verified === "1" ? "Yes" : "No",
+    new Date(u.created_at).toLocaleDateString("en-US", {
+      year: "numeric", month: "short", day: "numeric",
+    }),
+  ]);
+  const csv  = [headers, ...rows].map((r) => r.join(",")).join("\n");
+  const blob = new Blob([csv], { type: "text/csv" });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement("a");
+  a.href     = url;
+  a.download = "finhub_users.csv";
+  a.click();
+  URL.revokeObjectURL(url);
+};
+
 export default function Users() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -53,6 +78,8 @@ export default function Users() {
   const [filterVerified, setFilterVerified] = useState("all");
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [actionError, setActionError] = useState("");
+
+  const { refreshCount } = useNotifications();
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -75,6 +102,7 @@ export default function Users() {
           u.user_id === userId ? { ...u, status: newStatus } : u,
         ),
       );
+      refreshCount();
     } else {
       setActionError(result.error);
     }
@@ -85,6 +113,7 @@ export default function Users() {
     const result = await UsersBLL.delete(deleteTarget);
     if (result.success) {
       setUsers((prev) => prev.filter((u) => u.user_id !== deleteTarget));
+      refreshCount();
     } else {
       setActionError(result.error);
     }
@@ -113,11 +142,22 @@ export default function Users() {
   return (
     <div>
       {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-white">Users</h1>
-        <p className="text-slate-400 text-sm mt-1">
-          Manage all registered users on FinHub.
-        </p>
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-white">Users</h1>
+          <p className="text-slate-400 text-sm mt-1">Manage all registered users on FinHub.</p>
+        </div>
+        <button
+          onClick={() => exportUsersCSV(filtered)}
+          className="flex items-center gap-2 border border-slate-700 hover:border-emerald-500/50 text-slate-400 hover:text-emerald-400 text-sm px-4 py-2.5 rounded-xl transition-all"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="7 10 12 15 17 10" />
+            <line x1="12" y1="15" x2="12" y2="3" />
+          </svg>
+          Export CSV
+        </button>
       </div>
 
       {/* Action error */}

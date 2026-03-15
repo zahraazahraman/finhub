@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import ConsultantsBLL from "../bll/ConsultantsBLL.js";
+import { useNotifications } from "../context/NotificationContext.jsx";
 
 function StarRating({ rating }) {
   const r = parseFloat(rating) || 0;
@@ -125,6 +126,27 @@ function ConfirmModal({ message, onConfirm, onCancel }) {
   );
 }
 
+const exportConsultantsCSV = (consultants) => {
+  const headers = ["ID", "First Name", "Last Name", "Email", "Phone", "Specialization", "Rating"];
+  const rows = consultants.map((c) => [
+    c.consultant_id,
+    c.first_name,
+    c.last_name,
+    c.email,
+    c.phone || "—",
+    c.specialization,
+    c.rating || "—",
+  ]);
+  const csv  = [headers, ...rows].map((r) => r.join(",")).join("\n");
+  const blob = new Blob([csv], { type: "text/csv" });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement("a");
+  a.href     = url;
+  a.download = "finhub_consultants.csv";
+  a.click();
+  URL.revokeObjectURL(url);
+};
+
 export default function Consultants() {
   const [consultants, setConsultants] = useState([]);
   const [loading, setLoading]         = useState(true);
@@ -133,6 +155,8 @@ export default function Consultants() {
   const [modalTarget, setModalTarget] = useState(undefined);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [actionError, setActionError] = useState("");
+
+  const { refreshCount } = useNotifications();
 
   const fetchConsultants = async () => {
     setLoading(true);
@@ -151,6 +175,7 @@ export default function Consultants() {
     const result = await ConsultantsBLL.delete(deleteTarget);
     if (result.success) {
       setConsultants((prev) => prev.filter((c) => c.consultant_id !== deleteTarget));
+      refreshCount();
     } else {
       setActionError(result.error);
     }
@@ -171,15 +196,28 @@ export default function Consultants() {
           <h1 className="text-2xl font-bold text-white">Consultants</h1>
           <p className="text-slate-400 text-sm mt-1">Manage financial consultants listed on FinHub.</p>
         </div>
-        <button
-          onClick={() => setModalTarget(null)}
-          className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-slate-900 font-semibold text-sm px-4 py-2.5 rounded-xl transition-all"
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-            <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
-          </svg>
-          Add Consultant
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => exportConsultantsCSV(filtered)}
+            className="flex items-center gap-2 border border-slate-700 hover:border-emerald-500/50 text-slate-400 hover:text-emerald-400 text-sm px-4 py-2.5 rounded-xl transition-all"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+            Export CSV
+          </button>
+          <button
+            onClick={() => setModalTarget(null)}
+            className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-slate-900 font-semibold text-sm px-4 py-2.5 rounded-xl transition-all"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+              <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+            Add Consultant
+          </button>
+        </div>
       </div>
 
       {actionError && (
@@ -291,7 +329,7 @@ export default function Consultants() {
       {modalTarget !== undefined && (
         <ConsultantModal
           consultant={modalTarget}
-          onSave={() => { setModalTarget(undefined); fetchConsultants(); }}
+          onSave={() => { setModalTarget(undefined); fetchConsultants(); refreshCount(); }}
           onClose={() => setModalTarget(undefined)}
         />
       )}

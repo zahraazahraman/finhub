@@ -13,36 +13,39 @@ import Consultants from "./admin/Consultants.jsx";
 import Categories from "./admin/Categories.jsx";
 import AdminNotifications from "./admin/AdminNotifications.jsx";
 import UserNotifications from "./admin/UserNotifications.jsx";
+import { NotificationProvider } from "./context/NotificationContext.jsx";
 
 export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <Routes>
-          {/* Public */}
-          <Route path="/login" element={<LoginPage />} />
+          <NotificationProvider>
+            <Routes>
+              {/* Public */}
+              <Route path="/login" element={<LoginPage />} />
 
-          {/* Admin - protected */}
-          <Route
-            path="/admin"
-            element={
-              <ProtectedRoute>
-                <AdminLayout />
-              </ProtectedRoute>
-            }
-          >
-            <Route index element={<Navigate to="dashboard" replace />} />
-            <Route path="dashboard" element={<Dashboard />} />
-            <Route path="users" element={<Users />} />
-            <Route path="consultants" element={<Consultants />} />
-            <Route path="categories" element={<Categories />} />
-            <Route path="notifications" element={<AdminNotifications />} />
-            <Route path="user-notifications" element={<UserNotifications />} />
-          </Route>
+              {/* Admin - protected */}
+              <Route
+                path="/admin"
+                element={
+                  <ProtectedRoute>
+                    <AdminLayout />
+                  </ProtectedRoute>
+                }
+              >
+                <Route index element={<Navigate to="dashboard" replace />} />
+                <Route path="dashboard" element={<Dashboard />} />
+                <Route path="users" element={<Users />} />
+                <Route path="consultants" element={<Consultants />} />
+                <Route path="categories" element={<Categories />} />
+                <Route path="notifications" element={<AdminNotifications />} />
+                <Route path="user-notifications" element={<UserNotifications />} />
+              </Route>
 
-          {/* Fallback */}
-          <Route path="*" element={<Navigate to="/login" replace />} />
-        </Routes>
+              {/* Fallback */}
+              <Route path="*" element={<Navigate to="/login" replace />} />
+            </Routes>
+          </NotificationProvider>
       </AuthProvider>
     </BrowserRouter>
   );

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import AdminNotificationsBLL from "../../bll/AdminNotificationsBLL.js";
+import { useNotifications } from "../../context/NotificationContext.jsx";
 
 const typeLabels = {
   user_registered:    "User Registered",
@@ -18,18 +19,17 @@ const formatDate = (dateStr) =>
   });
 
 export default function NotificationBell() {
-  const [open, setOpen]           = useState(false);
+  const [open, setOpen]                   = useState(false);
   const [notifications, setNotifications] = useState([]);
-  const [unreadCount, setUnreadCount]     = useState(0);
-  const [loading, setLoading]     = useState(false);
-  const dropdownRef               = useRef(null);
+  const [loading, setLoading]             = useState(false);
+  const dropdownRef                       = useRef(null);
+  const { unreadCount, setUnreadCount, refreshCount } = useNotifications();
 
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (e) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target))
         setOpen(false);
-      }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
@@ -37,15 +37,10 @@ export default function NotificationBell() {
 
   // Fetch unread count on mount and every 30 seconds
   useEffect(() => {
-    fetchUnreadCount();
-    const interval = setInterval(fetchUnreadCount, 30000);
+    refreshCount();
+    const interval = setInterval(refreshCount, 30000);
     return () => clearInterval(interval);
   }, []);
-
-  const fetchUnreadCount = async () => {
-    const result = await AdminNotificationsBLL.getUnreadCount();
-    if (result.success) setUnreadCount(result.count);
-  };
 
   const fetchRecent = async () => {
     setLoading(true);
@@ -132,15 +127,12 @@ export default function NotificationBell() {
                     ${n.is_read === "0" ? "bg-slate-800/20" : "opacity-60"}
                   `}
                 >
-                  {/* Unread dot */}
                   <div className="mt-1.5 flex-shrink-0">
                     {n.is_read === "0"
                       ? <div className="w-2 h-2 rounded-full bg-emerald-400" />
                       : <div className="w-2 h-2 rounded-full bg-slate-700" />
                     }
                   </div>
-
-                  {/* Content */}
                   <div className="flex-1 min-w-0">
                     <p className="text-white text-xs font-medium">{n.title}</p>
                     {n.message && (
@@ -152,8 +144,6 @@ export default function NotificationBell() {
                       <span className="text-slate-600 text-[10px]">{formatDate(n.created_at)}</span>
                     </div>
                   </div>
-
-                  {/* Mark read */}
                   {n.is_read === "0" && (
                     <button
                       onClick={() => handleMarkRead(n.notification_id)}
