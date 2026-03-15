@@ -1,0 +1,15 @@
+# Dependencies
+frontend/node_modules/
+
+# Build
+frontend/dist/
+
+# Environment variables
+backend/.env
+
+# OS
+.DS_Store
+Thumbs.db
+
+# XAMPP logs
+*.log
