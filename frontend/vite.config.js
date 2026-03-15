@@ -40,6 +40,11 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace('/api/user-notifications', '/FinHub/backend/ws/user-notifications/index.php'),
       },
+      "/api/dashboard": {
+        target: "http://localhost",
+        changeOrigin: true,
+        rewrite: (path) => path.replace('/api/dashboard', '/FinHub/backend/ws/dashboard/index.php'),
+      },
     },
   },
 })
