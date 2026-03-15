@@ -12,6 +12,7 @@ import Users from "./admin/Users.jsx";
 import Consultants from "./admin/Consultants.jsx";
 import Categories from "./admin/Categories.jsx";
 import AdminNotifications from "./admin/AdminNotifications.jsx";
+import UserNotifications from "./admin/UserNotifications.jsx";
 
 export default function App() {
   return (
@@ -36,6 +37,7 @@ export default function App() {
             <Route path="consultants" element={<Consultants />} />
             <Route path="categories" element={<Categories />} />
             <Route path="notifications" element={<AdminNotifications />} />
+            <Route path="user-notifications" element={<UserNotifications />} />
           </Route>
 
           {/* Fallback */}
