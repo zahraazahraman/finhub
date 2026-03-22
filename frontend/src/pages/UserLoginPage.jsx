@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useUser } from "../context/UserContext.jsx";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 
 // ── DAL ──
@@ -110,6 +111,7 @@ export default function UserLoginPage() {
   const navigate  = useNavigate();
   const location  = useLocation();
   const justRegistered = new URLSearchParams(location.search).get("registered");
+  const { login } = useUser();
 
   const [email, setEmail]           = useState("");
   const [password, setPassword]     = useState("");
@@ -126,8 +128,7 @@ export default function UserLoginPage() {
     const result = await UserAuthBLL.login(email, password);
 
     if (result.success) {
-      // Store user in sessionStorage
-      sessionStorage.setItem("finhub_user", JSON.stringify(result.user));
+      login(result.user);
       navigate("/dashboard");
     } else if (result.validationErrors) {
       setFieldErrors(result.validationErrors);

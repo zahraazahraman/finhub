@@ -7,7 +7,7 @@ export default function ComingSoon() {
   return (
     <div className="min-h-screen bg-slate-950 flex items-center justify-center px-6">
       {/* Background grid */}
-      <div className="absolute inset-0 opacity-[0.04]" style={{
+      <div className="absolute inset-0 opacity-[0.04] pointer-events-none" style={{
         backgroundImage: "linear-gradient(#34d399 1px, transparent 1px), linear-gradient(90deg, #34d399 1px, transparent 1px)",
         backgroundSize: "40px 40px",
       }} />
