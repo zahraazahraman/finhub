@@ -3,6 +3,7 @@ import { AuthProvider } from "./context/AuthContext.jsx";
 import ProtectedRoute from "./components/common/ProtectedRoute.jsx";
 
 // Pages
+import LandingPage from "./pages/LandingPage.jsx";
 import LoginPage from "./pages/LoginPage.jsx";
 
 // Admin pages
@@ -22,6 +23,7 @@ export default function App() {
           <NotificationProvider>
             <Routes>
               {/* Public */}
+              <Route path="/" element={<LandingPage />} />
               <Route path="/login" element={<LoginPage />} />
 
               {/* Admin - protected */}
@@ -43,7 +45,8 @@ export default function App() {
               </Route>
 
               {/* Fallback */}
-              <Route path="*" element={<Navigate to="/login" replace />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
+
             </Routes>
           </NotificationProvider>
       </AuthProvider>
