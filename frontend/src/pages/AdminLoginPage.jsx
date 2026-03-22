@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
+import { useLocation } from "react-router-dom";
 import AuthBLL from "../bll/AuthBLL.js";
 
 function FinHubLogo() {
@@ -100,6 +101,9 @@ export default function LoginPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
 
+  const location = useLocation();
+  const justRegistered = new URLSearchParams(location.search).get("registered");
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setServerError("");
@@ -170,6 +174,15 @@ export default function LoginPage() {
           <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-8 shadow-2xl backdrop-blur-sm">
             <h2 className="text-xl font-semibold text-white mb-1">Sign in to Admin</h2>
             <p className="text-slate-500 text-sm mb-8">Enter your credentials to continue.</p>
+
+            {justRegistered && (
+              <div className="mb-5 flex items-start gap-3 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-sm rounded-xl px-4 py-3">
+                <svg className="w-4 h-4 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+                Account created successfully! Please sign in.
+              </div>
+            )}
 
             {serverError && (
               <div className="mb-6 flex items-start gap-3 bg-red-500/10 border border-red-500/30 text-red-400 text-sm rounded-xl px-4 py-3">

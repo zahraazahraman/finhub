@@ -10,6 +10,16 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: () => '/FinHub/backend/ws/auth/login.php',
       },
+      "/api/auth/user-login": {
+        target: "http://localhost",
+        changeOrigin: true,
+        rewrite: () => '/FinHub/backend/ws/auth/user-login.php',
+      },
+      "/api/auth/register": {
+        target: "http://localhost",
+        changeOrigin: true,
+        rewrite: () => '/FinHub/backend/ws/auth/register.php',
+      },
       "/api/auth/logout": {
         target: "http://localhost",
         changeOrigin: true,

@@ -113,7 +113,7 @@ export default function AdminLayout() {
     setLoggingOut(true);
     setShowLogoutModal(false);
     await logout();
-    navigate("/login");
+    navigate("/admin/login");
   };
 
   return (
