@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Outlet, NavLink, useNavigate } from "react-router-dom";
 import { useUser } from "../../context/UserContext.jsx";
+import ThemeToggle from "../common/ThemeToggle.jsx";
+import Modal from "../ui/Modal.jsx";
 
 const navItems = [
   {
@@ -79,27 +81,28 @@ const navItems = [
 ];
 
 export default function UserLayout() {
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed]             = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
-  const { user, logout } = useUser();
-  const navigate = useNavigate();
+  const { user, logout }                      = useUser();
+  const navigate                              = useNavigate();
 
-  const handleLogout = async () => {
+  const handleLogout = () => {
     logout();
     navigate("/login");
   };
 
   return (
-    <div className="h-screen bg-slate-950 flex overflow-hidden">
+    <div className="h-screen bg-skin-base flex overflow-hidden">
 
       {/* ── Sidebar ── */}
       <aside className={`
-        flex flex-col bg-slate-900 border-r border-slate-800
+        flex flex-col bg-skin-sidebar border-r border-skin-border
         transition-all duration-300 ease-in-out flex-shrink-0 h-screen sticky top-0
         ${collapsed ? "w-16" : "w-60"}
-      `}>
+      `}
+      style={{ boxShadow: 'var(--shadow-sm)' }}>
         {/* Logo */}
-        <div className={`flex items-center gap-3 px-4 h-16 border-b border-slate-800 flex-shrink-0 ${collapsed ? "justify-center" : ""}`}>
+        <div className={`flex items-center gap-3 px-4 h-16 border-b border-skin-border flex-shrink-0 ${collapsed ? "justify-center" : ""}`}>
           <div className="relative w-8 h-8 flex-shrink-0">
             <div className="absolute inset-0 bg-emerald-500 rounded-lg rotate-6 opacity-30" />
             <div className="absolute inset-0 bg-emerald-400 rounded-lg flex items-center justify-center">
@@ -111,8 +114,8 @@ export default function UserLayout() {
           </div>
           {!collapsed && (
             <div>
-              <span className="text-white font-bold tracking-tight">Fin</span>
-              <span className="text-emerald-400 font-bold tracking-tight">Hub</span>
+              <span className="text-skin-text font-bold tracking-tight">Fin</span>
+              <span className="text-emerald-500 font-bold tracking-tight">Hub</span>
             </div>
           )}
         </div>
@@ -128,8 +131,8 @@ export default function UserLayout() {
                 transition-all duration-150
                 ${collapsed ? "justify-center" : ""}
                 ${isActive
-                  ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
-                  : "text-slate-400 hover:text-white hover:bg-slate-800 border border-transparent"
+                  ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20"
+                  : "text-skin-text-secondary hover:text-skin-text hover:bg-skin-hover border border-transparent"
                 }
               `}
             >
@@ -140,19 +143,19 @@ export default function UserLayout() {
         </nav>
 
         {/* Bottom */}
-        <div className="p-2 border-t border-slate-800">
+        <div className="p-2 border-t border-skin-border">
           {!collapsed && (
             <div className="flex items-center gap-3 px-3 py-2 mb-1">
               <div className="w-7 h-7 rounded-full bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center flex-shrink-0">
-                <span className="text-emerald-400 text-xs font-bold">
+                <span className="text-emerald-500 text-xs font-bold">
                   {user?.first_name?.[0]?.toUpperCase() ?? "U"}
                 </span>
               </div>
               <div className="overflow-hidden">
-                <p className="text-slate-300 text-xs font-medium truncate">
+                <p className="text-skin-text text-xs font-medium truncate">
                   {user?.first_name} {user?.last_name}
                 </p>
-                <p className="text-slate-600 text-[10px]">{user?.email}</p>
+                <p className="text-skin-text-muted text-[10px]">{user?.email}</p>
               </div>
             </div>
           )}
@@ -160,7 +163,7 @@ export default function UserLayout() {
             onClick={() => setShowLogoutModal(true)}
             className={`
               w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium
-              text-slate-400 hover:text-red-400 hover:bg-red-500/10
+              text-skin-text-secondary hover:text-red-500 hover:bg-red-500/10
               border border-transparent hover:border-red-500/20
               transition-all duration-150
               ${collapsed ? "justify-center" : ""}
@@ -179,10 +182,11 @@ export default function UserLayout() {
       {/* ── Main area ── */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Topbar */}
-        <header className="h-16 bg-slate-900/50 border-b border-slate-800 flex items-center px-6 gap-4 flex-shrink-0">
+        <header className="h-16 bg-skin-topbar border-b border-skin-border flex items-center px-6 gap-4 flex-shrink-0 backdrop-blur-sm"
+        style={{ boxShadow: 'var(--shadow-sm)' }}>
           <button
             onClick={() => setCollapsed((v) => !v)}
-            className="text-slate-400 hover:text-white transition-colors p-1.5 rounded-lg hover:bg-slate-800"
+            className="text-skin-text-secondary hover:text-skin-text transition-colors p-1.5 rounded-lg hover:bg-skin-hover"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
               <line x1="3" y1="6" x2="21" y2="6" />
@@ -190,19 +194,18 @@ export default function UserLayout() {
               <line x1="3" y1="18" x2="21" y2="18" />
             </svg>
           </button>
-
           <div className="flex-1">
-            <h1 className="text-white font-semibold text-sm capitalize">
+            <h1 className="text-skin-text font-semibold text-sm capitalize">
               {location.pathname.split("/").pop() || "dashboard"}
             </h1>
           </div>
-
           <div className="flex items-center gap-3">
-            <span className="text-slate-400 text-sm hidden md:block">
+            <ThemeToggle />
+            <span className="text-skin-text-secondary text-sm hidden md:block">
               {user?.first_name} {user?.last_name}
             </span>
             <div className="w-8 h-8 rounded-full bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center">
-              <span className="text-emerald-400 text-xs font-bold">
+              <span className="text-emerald-500 text-xs font-bold">
                 {user?.first_name?.[0]?.toUpperCase() ?? "U"}
               </span>
             </div>
@@ -210,40 +213,22 @@ export default function UserLayout() {
         </header>
 
         {/* Page content */}
-        <main className="flex-1 p-6 overflow-y-auto">
+        <main className="flex-1 p-6 overflow-y-auto animate-fade-in">
           <Outlet />
         </main>
       </div>
 
       {/* Logout Modal */}
       {showLogoutModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 w-full max-w-sm shadow-2xl">
-            <div className="w-12 h-12 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center mb-4">
-              <svg className="w-6 h-6 text-red-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                <polyline points="16 17 21 12 16 7" />
-                <line x1="21" y1="12" x2="9" y2="12" />
-              </svg>
-            </div>
-            <h3 className="text-white font-semibold mb-1">Sign out?</h3>
-            <p className="text-slate-400 text-sm mb-6">You will be redirected to the login page.</p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowLogoutModal(false)}
-                className="flex-1 px-4 py-2.5 rounded-xl border border-slate-700 text-slate-400 hover:text-white hover:bg-slate-800 text-sm transition-all"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleLogout}
-                className="flex-1 px-4 py-2.5 rounded-xl bg-red-500 hover:bg-red-400 text-white text-sm font-medium transition-all"
-              >
-                Sign Out
-              </button>
-            </div>
-          </div>
-        </div>
+        <Modal
+          title="Sign out?"
+          description="You will be redirected to the login page."
+          showFooter
+          confirmLabel="Sign Out"
+          confirmVariant="danger"
+          onConfirm={handleLogout}
+          onClose={() => setShowLogoutModal(false)}
+        />
       )}
     </div>
   );

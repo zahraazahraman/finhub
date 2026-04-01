@@ -1,8 +1,8 @@
 export default function Accounts() {
   return (
     <div>
-      <h1 className="text-2xl font-bold text-white">My Accounts</h1>
-      <p className="text-slate-400 mt-1">Coming soon.</p>
+      <h1 className="text-2xl font-bold text-skin-text">My Accounts</h1>
+      <p className="text-skin-text-secondary mt-1">Coming soon.</p>
     </div>
   );
 }
