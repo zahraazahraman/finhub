@@ -60,6 +60,21 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace('/api/dashboard', '/FinHub/backend/ws/dashboard/index.php'),
       },
+      "/api/currencies": {
+        target: "http://localhost",
+        changeOrigin: true,
+        rewrite: (path) => path.replace('/api/currencies', '/FinHub/backend/ws/currencies/index.php'),
+      },
+      "/api/accounts": {
+        target: "http://localhost",
+        changeOrigin: true,
+        rewrite: (path) => path.replace('/api/accounts', '/FinHub/backend/ws/accounts/index.php'),
+      },
+      "/api/transactions": {
+        target: "http://localhost",
+        changeOrigin: true,
+        rewrite: (path) => path.replace('/api/transactions', '/FinHub/backend/ws/transactions/index.php'),
+      },
     },
   },
 })
