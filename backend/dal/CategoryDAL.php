@@ -37,4 +37,13 @@ class CategoryDAL {
         );
         return $stmt->execute([':id' => $id]);
     }
+
+    public function nameTypeExists(string $name, string $type): bool {
+        $stmt = $this->db->prepare(
+            "SELECT COUNT(*) FROM Categories 
+            WHERE LOWER(name) = LOWER(:name) AND type = :type"
+        );
+        $stmt->execute([':name' => $name, ':type' => $type]);
+        return $stmt->fetchColumn() > 0;
+    }
 }

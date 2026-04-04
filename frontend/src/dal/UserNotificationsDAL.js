@@ -1,16 +1,11 @@
-const BASE = "/api/user-notifications";
+import api from "../utils/api.js";
 
 export default class UserNotificationsDAL {
   static async getAll() {
-    const res = await fetch(BASE, { credentials: "include" });
-    return { ok: res.ok, data: await res.json() };
+    return await api.get("/user-notifications");
   }
 
   static async delete(id) {
-    const res = await fetch(`${BASE}/${id}`, {
-      method: "DELETE",
-      credentials: "include",
-    });
-    return { ok: res.ok, data: await res.json() };
+    return await api.delete(`/user-notifications/${id}`);
   }
 }

@@ -1,21 +1,11 @@
-const BASE = "/api/auth";
+import api from "../utils/api.js";
 
 export default class AuthDAL {
   static async loginRequest(email, password) {
-    const res = await fetch(`${BASE}/login`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({ email, password }),
-    });
-    return { ok: res.ok, data: await res.json() };
+    return await api.post("/auth/login", { email, password });
   }
 
   static async logoutRequest() {
-    const res = await fetch(`${BASE}/logout`, {
-      method: "POST",
-      credentials: "include",
-    });
-    return { ok: res.ok };
+    return await api.post("/auth/logout", {});
   }
 }

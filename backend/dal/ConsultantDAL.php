@@ -58,4 +58,13 @@ class ConsultantDAL {
         );
         return $stmt->execute([':id' => $id]);
     }
+
+    public function emailExists(string $email, int $excludeId = 0): bool {
+        $stmt = $this->db->prepare(
+            "SELECT COUNT(*) FROM Consultants 
+            WHERE email = :email AND consultant_id != :exclude_id"
+        );
+        $stmt->execute([':email' => $email, ':exclude_id' => $excludeId]);
+        return $stmt->fetchColumn() > 0;
+    }
 }

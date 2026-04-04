@@ -21,6 +21,9 @@ class CategoryBLL {
         if (!in_array($data['type'], ['income', 'expense']))
             return ['success' => false, 'message' => 'Type must be income or expense.'];
 
+        if ($this->dal->nameTypeExists($data['name'], $data['type']))
+            return ['success' => false, 'message' => 'A category with this name and type already exists.'];
+
         $result = $this->dal->create($data);
         if ($result) {
             $this->notifier->notify(

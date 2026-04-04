@@ -1,26 +1,15 @@
-const BASE = "/api/categories";
+import api from "../utils/api.js";
 
 export default class CategoriesDAL {
   static async getAll() {
-    const res = await fetch(BASE, { credentials: "include" });
-    return { ok: res.ok, data: await res.json() };
+    return await api.get("/categories");
   }
 
   static async create(payload) {
-    const res = await fetch(BASE, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify(payload),
-    });
-    return { ok: res.ok, data: await res.json() };
+    return await api.post("/categories", payload);
   }
 
   static async delete(id) {
-    const res = await fetch(`${BASE}/${id}`, {
-      method: "DELETE",
-      credentials: "include",
-    });
-    return { ok: res.ok, data: await res.json() };
+    return await api.delete(`/categories/${id}`);
   }
 }

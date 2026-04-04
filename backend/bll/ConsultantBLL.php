@@ -31,9 +31,13 @@ class ConsultantBLL {
     }
 
     public function create(array $data): array {
-        $errors = $this->validate($data);
+    $errors = $this->validate($data);
         if (!empty($errors))
             return ['success' => false, 'message' => implode(' ', $errors)];
+
+        if ($this->dal->emailExists($data['email']))
+            return ['success' => false, 'message' => 'A consultant with this email already exists.'];
+
         $result = $this->dal->create($data);
         if ($result) {
             $this->notifier->notify(
@@ -50,10 +54,15 @@ class ConsultantBLL {
         $errors = $this->validate($data);
         if (!empty($errors))
             return ['success' => false, 'message' => implode(' ', $errors)];
+
+        if ($this->dal->emailExists($data['email'], $id))
+            return ['success' => false, 'message' => 'A consultant with this email already exists.'];
+
         $result = $this->dal->update($id, $data);
         if ($result) return ['success' => true, 'message' => 'Consultant updated successfully.'];
         return ['success' => false, 'message' => 'Failed to update consultant.'];
     }
+
 
     public function delete(int $id): array {
         if ($id <= 0)

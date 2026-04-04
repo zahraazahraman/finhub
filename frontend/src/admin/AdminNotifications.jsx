@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNotifications } from "../context/NotificationContext.jsx";
 import AdminNotificationsBLL from "../bll/AdminNotificationsBLL.js";
 import Button from "../components/ui/Button.jsx";
 import Badge from "../components/ui/Badge.jsx";
@@ -19,6 +20,7 @@ export default function AdminNotifications() {
   const [filterRead, setFilterRead]       = useState("all");
   const [deleteTarget, setDeleteTarget]   = useState(null);
   const [actionError, setActionError]     = useState("");
+  const { refreshCount } = useNotifications();
 
   const fetchNotifications = async () => {
     setLoading(true);
@@ -36,6 +38,7 @@ export default function AdminNotifications() {
       setNotifications((prev) =>
         prev.map((n) => n.notification_id === id ? { ...n, is_read: "1" } : n)
       );
+      refreshCount();
     } else setActionError(result.error);
   };
 
@@ -43,6 +46,7 @@ export default function AdminNotifications() {
     const result = await AdminNotificationsBLL.markAllRead();
     if (result.success) {
       setNotifications((prev) => prev.map((n) => ({ ...n, is_read: "1" })));
+      refreshCount();
     } else setActionError(result.error);
   };
 

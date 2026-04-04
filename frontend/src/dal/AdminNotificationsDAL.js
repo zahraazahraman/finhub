@@ -1,42 +1,27 @@
-const BASE = "/api/admin-notifications";
+import api from "../utils/api.js";
 
 export default class AdminNotificationsDAL {
   static async getAll() {
-    const res = await fetch(BASE, { credentials: "include" });
-    return { ok: res.ok, data: await res.json() };
+    return await api.get("/admin-notifications");
   }
 
   static async getUnreadCount() {
-    const res = await fetch(`${BASE}/unread-count`, { credentials: "include" });
-    return { ok: res.ok, data: await res.json() };
+    return await api.get("/admin-notifications/unread-count");
   }
 
   static async getRecent() {
-    const res = await fetch(`${BASE}/recent`, { credentials: "include" });
-    return { ok: res.ok, data: await res.json() };
+    return await api.get("/admin-notifications/recent");
   }
 
   static async markRead(id) {
-    const res = await fetch(`${BASE}/${id}`, {
-      method: "PATCH",
-      credentials: "include",
-    });
-    return { ok: res.ok, data: await res.json() };
+    return await api.patch(`/admin-notifications/${id}`, {});
   }
 
   static async markAllRead() {
-    const res = await fetch(`${BASE}/mark-all-read`, {
-      method: "PATCH",
-      credentials: "include",
-    });
-    return { ok: res.ok, data: await res.json() };
+    return await api.patch("/admin-notifications/mark-all-read", {});
   }
 
   static async delete(id) {
-    const res = await fetch(`${BASE}/${id}`, {
-      method: "DELETE",
-      credentials: "include",
-    });
-    return { ok: res.ok, data: await res.json() };
+    return await api.delete(`/admin-notifications/${id}`);
   }
 }
