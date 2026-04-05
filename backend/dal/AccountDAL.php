@@ -44,6 +44,13 @@ class AccountDAL {
     }
 
     public function delete(int $accountId): void {
+        // Delete linked transactions first
+        $stmt = $this->db->prepare(
+            "DELETE FROM Transactions WHERE account_id = :account_id"
+        );
+        $stmt->execute([':account_id' => $accountId]);
+
+        // Then delete the account
         $stmt = $this->db->prepare(
             "DELETE FROM Accounts WHERE account_id = :account_id"
         );
