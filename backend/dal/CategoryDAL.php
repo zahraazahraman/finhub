@@ -46,4 +46,25 @@ class CategoryDAL {
         $stmt->execute([':name' => $name, ':type' => $type]);
         return $stmt->fetchColumn() > 0;
     }
+
+    public function findByNameAndType(string $name, string $type, int $userId): ?int {
+        $stmt = $this->db->prepare(
+            "SELECT category_id FROM Categories
+            WHERE LOWER(name) = LOWER(:name) AND type = :type
+            AND (user_id IS NULL OR user_id = :user_id)
+            LIMIT 1"
+        );
+        $stmt->execute([':name' => $name, ':type' => $type, ':user_id' => $userId]);
+        $result = $stmt->fetchColumn();
+        return $result !== false ? (int)$result : null;
+    }
+
+    public function createAndReturnId(string $name, string $type, int $userId): int {
+        $stmt = $this->db->prepare(
+            "INSERT INTO Categories (name, type, user_id)
+            VALUES (:name, :type, :user_id)"
+        );
+        $stmt->execute([':name' => $name, ':type' => $type, ':user_id' => $userId]);
+        return (int)$this->db->lastInsertId();
+    }
 }

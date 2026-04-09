@@ -12,4 +12,17 @@ export default class TransactionsDAL {
   static async remove(id) {
     return await api.delete(`/transactions?id=${id}`);
   }
+
+  static async import(accountId, file) {
+    const formData = new FormData();
+    formData.append("account_id", accountId);
+    formData.append("file", file);
+    return await api.upload("/transactions/import", formData);
+  }
+
+  static async scanReceipt(image) {
+    const formData = new FormData();
+    formData.append("image", image);
+    return await api.upload("/transactions/scan-receipt", formData);
+  }
 }

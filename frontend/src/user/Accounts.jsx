@@ -8,6 +8,8 @@ import AccountsList from "../components/accounts/AccountsList.jsx";
 import AccountDetail from "../components/accounts/AccountDetail.jsx";
 import AddAccountModal from "../components/accounts/AddAccountModal.jsx";
 import AddTransactionModal from "../components/accounts/AddTransactionModal.jsx";
+import ImportTransactionsModal from "../components/accounts/ImportTransactionsModal.jsx";
+import ScanReceiptModal from "../components/accounts/ScanReceiptModal.jsx";
 
 export default function Accounts() {
   // ── Data ──
@@ -25,6 +27,9 @@ export default function Accounts() {
   // ── Modals ──
   const [showAddAccount, setShowAddAccount]       = useState(false);
   const [showAddTx, setShowAddTx]                 = useState(false);
+  const [showImport, setShowImport] = useState(false);
+  const [showScanReceipt, setShowScanReceipt] = useState(false);
+  const [receiptData, setReceiptData] = useState(null);
   const [deleteAccountTarget, setDeleteAccountTarget] = useState(null);
   const [deleteTxTarget, setDeleteTxTarget]       = useState(null);
 
@@ -94,6 +99,28 @@ export default function Accounts() {
     setShowAddTx(false);
   };
 
+  const handleImported = async () => {
+    if (!selectedAccount) return;
+    setTxLoading(true);
+    const [txResult, accResult] = await Promise.all([
+      TransactionsBLL.getByAccount(selectedAccount.account_id),
+      AccountsBLL.getAll(),
+    ]);
+    if (txResult.success) setTransactions(txResult.transactions);
+    if (accResult.success) {
+      setAccounts(accResult.accounts);
+      const updated = accResult.accounts.find(a => a.account_id === selectedAccount.account_id);
+      if (updated) setSelectedAccount(updated);
+    }
+    setTxLoading(false);
+  };
+
+  const handleReceiptExtracted = (data) => {
+    setShowScanReceipt(false);
+    setShowAddTx(true);
+    setReceiptData(data);
+  };
+
   const handleTxDeleted = async () => {
     setDeletingTx(true);
     const result = await TransactionsBLL.remove(deleteTxTarget.transaction_id);
@@ -136,6 +163,8 @@ export default function Accounts() {
           loading={txLoading}
           onBack={() => setSelectedAccount(null)}
           onAddTx={() => setShowAddTx(true)}
+          onImport={() => setShowImport(true)}
+          onScanReceipt={() => setShowScanReceipt(true)}
           onDeleteTx={setDeleteTxTarget}
           onDeleteAccount={setDeleteAccountTarget}
         />
@@ -153,8 +182,25 @@ export default function Accounts() {
       {showAddTx && (
         <AddTransactionModal
           account={selectedAccount}
-          onClose={() => setShowAddTx(false)}
+          receiptData={receiptData}
+          onClose={() => { setShowAddTx(false); setReceiptData(null); }}
           onCreated={handleTxCreated}
+        />
+      )}
+
+      {showImport && (
+        <ImportTransactionsModal
+          account={selectedAccount}
+          onClose={() => setShowImport(false)}
+          onImported={handleImported}
+        />
+      )}
+
+      {showScanReceipt && (
+        <ScanReceiptModal
+          account={selectedAccount}
+          onClose={() => setShowScanReceipt(false)}
+          onExtracted={handleReceiptExtracted}
         />
       )}
 

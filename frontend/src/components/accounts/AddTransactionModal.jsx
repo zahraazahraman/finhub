@@ -12,10 +12,13 @@ const TRANSACTION_TYPE_OPTIONS = [
   { value: "transfer", label: "Transfer"        },
 ];
 
-export default function AddTransactionModal({ account, onClose, onCreated }) {
+export default function AddTransactionModal({ account, receiptData, onClose, onCreated }) {
   const [form, setForm] = useState({
-    amount: "", transaction_type: "", category_id: "",
-    description: "", transaction_date: new Date().toISOString().split("T")[0],
+    amount:           receiptData?.amount       ?? "",
+    transaction_type: receiptData?.amount       ? "expense" : "",
+    category_id:      "",
+    description:      receiptData?.description  ?? "",
+    transaction_date: receiptData?.date         ?? new Date().toISOString().split("T")[0],
   });
   const [categories, setCategories]   = useState([]);
   const [errors, setErrors]           = useState({});
@@ -29,6 +32,17 @@ export default function AddTransactionModal({ account, onClose, onCreated }) {
     };
     load();
   }, []);
+
+  useEffect(() => {
+    if (!receiptData?.category || categories.length === 0) return;
+    const match = categories.find(
+      (c) => c.name.toLowerCase() === receiptData.category.toLowerCase()
+    );
+    if (match) {
+      setForm((prev) => ({ ...prev, category_id: match.category_id }));
+    }
+  }, [categories, receiptData]);
+
 
   const filteredCategories = categories.filter(
     (c) => !form.transaction_type || c.type === form.transaction_type
@@ -87,6 +101,18 @@ export default function AddTransactionModal({ account, onClose, onCreated }) {
       size="md"
     >
       <div className="pt-2 space-y-1">
+        {receiptData && (
+          <div className="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 rounded-xl px-4 py-3 mb-2">
+            <svg className="w-4 h-4 text-emerald-500 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+              <polyline points="22 4 12 14.01 9 11.01" />
+            </svg>
+            <p className="text-emerald-500 text-xs">
+              Receipt scanned successfully. Review and confirm the details below.
+            </p>
+          </div>
+        )}
+
         {serverError && (
           <p className="text-red-500 text-sm mb-3">{serverError}</p>
         )}

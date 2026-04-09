@@ -70,6 +70,16 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace('/api/accounts', '/FinHub/backend/ws/accounts/index.php'),
       },
+      "/api/transactions/scan-receipt": {
+        target: "http://localhost",
+        changeOrigin: true,
+        rewrite: () => '/FinHub/backend/ws/transactions/scan-receipt.php',
+      },
+      "/api/transactions/import": {
+        target: "http://localhost",
+        changeOrigin: true,
+        rewrite: () => '/FinHub/backend/ws/transactions/import.php',
+      },
       "/api/transactions": {
         target: "http://localhost",
         changeOrigin: true,

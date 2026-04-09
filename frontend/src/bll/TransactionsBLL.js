@@ -28,4 +28,29 @@ export default class TransactionsBLL {
     if (ok && data.success) return { success: true };
     return { success: false, error: data.message || "Failed to delete transaction." };
   }
+
+  static async import(accountId, file) {
+    if (!file) return { success: false, error: "Please select a file." };
+
+    const allowed = ["csv", "xlsx", "xls"];
+    const ext = file.name.split(".").pop().toLowerCase();
+    if (!allowed.includes(ext))
+      return { success: false, error: "Only CSV, XLS, and XLSX files are allowed." };
+
+    const { ok, data } = await TransactionsDAL.import(accountId, file);
+    if (ok && data.success)
+      return { success: true, imported: data.imported, skipped: data.skipped };
+    return { success: false, error: data.message || "Import failed." };
+  }
+
+  static async scanReceipt(image) {
+    const allowed = ["jpg", "jpeg", "png", "webp"];
+    const ext = image.name.split(".").pop().toLowerCase();
+    if (!allowed.includes(ext))
+      return { success: false, error: "Only JPG, PNG, and WEBP images are allowed." };
+
+    const { ok, data } = await TransactionsDAL.scanReceipt(image);
+    if (ok && data.success) return { success: true, data: data.data };
+    return { success: false, error: data.message || "Failed to scan receipt." };
+  }
 }

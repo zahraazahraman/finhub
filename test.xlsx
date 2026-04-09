@@ -1,0 +1,11 @@
+date,type,amount,description,category
+2026-02-01,income,3000,Second salary,Salary
+2026-02-03,expense,120,New shoes,Clothing
+2026-02-05,expense,45,Dinner out,Food & Drinks
+2026-02-07,income,500,Side project,Consulting
+2026-02-10,expense,200,Electricity bill,Utilities
+2026-02-12,transfer,100,Moving money,
+2026-02-15,expense,abc,Bad amount,Food & Drinks
+2026-02-18,expense,60,Gym,Fitness
+2026-02-20,invalidtype,50,Bad type,Food & Drinks
+2026-02-22,expense,30,Coffee,Café

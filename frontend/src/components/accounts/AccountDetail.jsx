@@ -9,7 +9,7 @@ const TX_TYPE_STYLES = {
   transfer: { label: "Transfer", variant: "info"    },
 };
 
-export default function AccountDetail({ account, transactions, loading, onBack, onAddTx, onDeleteTx, onDeleteAccount }) {
+export default function AccountDetail({ account, transactions, loading, onBack, onAddTx, onImport, onScanReceipt, onDeleteTx, onDeleteAccount }) {
   const totalIncome   = transactions.filter(t => t.transaction_type === "income").reduce((s, t) => s + parseFloat(t.amount), 0);
   const totalExpenses = transactions.filter(t => t.transaction_type === "expense").reduce((s, t) => s + parseFloat(t.amount), 0);
 
@@ -107,6 +107,35 @@ export default function AccountDetail({ account, transactions, loading, onBack, 
             iconPosition="left"
           >
             Delete Account
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onImport}
+            icon={
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="17 8 12 3 7 8" />
+                <line x1="12" y1="3" x2="12" y2="15" />
+              </svg>
+            }
+            iconPosition="left"
+          >
+            Import
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onScanReceipt}
+            icon={
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                <circle cx="12" cy="13" r="4" />
+              </svg>
+            }
+            iconPosition="left"
+          >
+            Scan Receipt
           </Button>
           <Button
             variant="primary"

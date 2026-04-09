@@ -10,9 +10,10 @@ async function request(endpoint, options = {}) {
     ...options,
   };
 
-  if (config.body && typeof config.body === "object") {
+  if (config.body && typeof config.body === "object" && !(config.body instanceof FormData)) {
     config.body = JSON.stringify(config.body);
   }
+
 
   try {
     const response = await fetch(`${BASE_URL}${endpoint}`, config);
@@ -33,6 +34,12 @@ const api = {
   put:    (endpoint, body)   => request(endpoint, { method: "PUT", body }),
   patch:  (endpoint, body)   => request(endpoint, { method: "PATCH", body }),
   delete: (endpoint)         => request(endpoint, { method: "DELETE" }),
+  upload: (endpoint, formData) =>
+    request(endpoint, {
+      method: "POST",
+      body: formData,
+      headers: {}, // override to avoid setting Content-Type
+    }),
 };
 
 export default api;
