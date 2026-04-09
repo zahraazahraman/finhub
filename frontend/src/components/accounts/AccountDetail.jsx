@@ -51,7 +51,7 @@ export default function AccountDetail({ account, transactions, loading, onBack, 
           row.transaction_type === "income" ? "text-emerald-500" : "text-red-500"
         }`}>
           {row.transaction_type === "income" ? "+" : "-"}
-          {account.currency_symbol}{formatCurrency(row.amount)}
+          {formatCurrency(row.amount, account.currency_symbol)}
         </span>
       ),
     },
@@ -157,9 +157,9 @@ export default function AccountDetail({ account, transactions, loading, onBack, 
       {/* ── Stats ── */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         {[
-          { label: "Balance",        value: account.balance,  color: "text-skin-text",   prefix: account.currency_symbol },
-          { label: "Total Income",   value: totalIncome,      color: "text-emerald-500", prefix: account.currency_symbol },
-          { label: "Total Expenses", value: totalExpenses,    color: "text-red-500",     prefix: account.currency_symbol },
+          { label: "Balance",        value: account.balance,  color: "text-skin-text" },
+          { label: "Total Income",   value: totalIncome,      color: "text-emerald-500" },
+          { label: "Total Expenses", value: totalExpenses,    color: "text-red-500" },
         ].map((stat) => (
           <div key={stat.label}
             className="bg-skin-card border border-skin-border rounded-2xl p-5 animate-slide-up"
@@ -169,7 +169,7 @@ export default function AccountDetail({ account, transactions, loading, onBack, 
               {stat.label}
             </p>
             <p className={`text-2xl font-bold ${stat.color}`}>
-              {stat.prefix}{formatCurrency(stat.value)}
+              {formatCurrency(stat.value, account.currency_symbol)}
             </p>
           </div>
         ))}

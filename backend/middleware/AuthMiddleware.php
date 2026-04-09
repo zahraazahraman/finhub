@@ -20,4 +20,11 @@ class AuthMiddleware {
         return $_SESSION['user'];
     }
 
+    public static function isAdmin(): bool {
+        return !empty($_SESSION['admin']);
+    }
+
+    public static function isUser(): bool {
+        return !empty($_SESSION['user']);
+    }
 }
