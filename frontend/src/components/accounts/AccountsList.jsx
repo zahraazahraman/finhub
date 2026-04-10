@@ -4,29 +4,6 @@ import AccountCard from "./AccountCard.jsx";
 export default function AccountsList({ accounts, onSelectAccount, onAddAccount, onDeleteAccount }) {
   return (
     <div>
-      {/* ── Header ── */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-skin-text">My Accounts</h1>
-          <p className="text-skin-text-secondary text-sm mt-1">
-            Manage your accounts and track your finances.
-          </p>
-        </div>
-        <Button
-          variant="primary"
-          onClick={onAddAccount}
-          icon={
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-              <line x1="12" y1="5" x2="12" y2="19" />
-              <line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
-          }
-          iconPosition="left"
-        >
-          New Account
-        </Button>
-      </div>
-
       {/* ── Empty state ── */}
       {accounts.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-24 text-center">

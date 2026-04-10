@@ -4,6 +4,7 @@ import TransactionsBLL from "../bll/TransactionsBLL.js";
 import CurrenciesBLL from "../bll/CurrenciesBLL.js";
 import Modal from "../components/ui/Modal.jsx";
 import Spinner from "../components/ui/Spinner.jsx";
+import Button from "../components/ui/Button.jsx";
 import AccountsList from "../components/accounts/AccountsList.jsx";
 import AccountDetail from "../components/accounts/AccountDetail.jsx";
 import AddAccountModal from "../components/accounts/AddAccountModal.jsx";
@@ -141,13 +142,36 @@ export default function Accounts() {
   };
 
   if (pageLoading) return (
-    <div className="flex items-center justify-center h-64">
+    <div className="flex items-center justify-center h-64 animate-fade-in" >
       <Spinner size="lg" />
     </div>
   );
 
   return (
-    <div>
+    <div className="animate-fade-in">
+      {/* ── Header ── */}
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-skin-text">My Accounts</h1>
+          <p className="text-skin-text-secondary text-sm mt-1">
+            Manage your accounts and track your finances.
+          </p>
+        </div>
+        <Button
+          variant="primary"
+          onClick={() => setShowAddAccount(true)}
+          icon={
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+          }
+          iconPosition="left"
+        >
+          New Account
+        </Button>
+      </div>
+
       {/* ── View ── */}
       {!selectedAccount ? (
         <AccountsList
