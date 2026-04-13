@@ -64,3 +64,6 @@ export const ACCOUNT_TYPES = ["bank", "cash", "credit_card", "wallet"];
 export const TRANSACTION_TYPES = ["income", "expense", "transfer"];
 
 export const TRANSACTION_SOURCE_TYPES = ["manual", "csv", "receipt"];
+
+// Goal contribution category ID (reference from backend PHP constant)
+export const GOAL_CONTRIBUTION_CATEGORY_ID = 19;

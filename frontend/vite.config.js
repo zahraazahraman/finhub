@@ -75,6 +75,16 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace('/api/accounts', '/FinHub/backend/ws/accounts/index.php'),
       },
+      "/api/goals/contributions": {
+        target: "http://localhost",
+        changeOrigin: true,
+        rewrite: (path) => path.replace('/api/goals/contributions', '/FinHub/backend/ws/goals/index.php'),
+      },
+      "/api/goals": {
+        target: "http://localhost",
+        changeOrigin: true,
+        rewrite: (path) => path.replace('/api/goals', '/FinHub/backend/ws/goals/index.php'),
+      },
       "/api/transactions/scan-receipt": {
         target: "http://localhost",
         changeOrigin: true,
