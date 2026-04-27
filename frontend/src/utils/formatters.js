@@ -21,10 +21,20 @@ export const formatDateTime = (dateStr) => {
 
 export const formatCurrency = (amount, symbol = "$") => {
   if (amount === null || amount === undefined) return "—";
-  return `${symbol}${Number(amount).toLocaleString("en-US", {
-    minimumFractionDigits: 2,
+  const num = Number(amount);
+  return `${symbol}${num.toLocaleString("en-US", {
+    minimumFractionDigits: num % 1 === 0 ? 0 : 2,
     maximumFractionDigits: 2,
   })}`;
+};
+
+export const formatNumber = (amount, decimals = 2) => {
+  if (amount === null || amount === undefined) return "—";
+  const num = Number(amount);
+  return num.toLocaleString("en-US", {
+    minimumFractionDigits: num % 1 === 0 ? 0 : decimals,
+    maximumFractionDigits: decimals,
+  });
 };
 
 export const capitalize = (str) =>

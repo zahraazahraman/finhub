@@ -1,10 +1,10 @@
 import Card from "../ui/Card.jsx";
 import Badge from "../ui/Badge.jsx";
-import { formatDate, formatCurrency } from "../../utils/formatters.js";
+import { formatCurrency } from "../../utils/formatters.js";
 
 const GOAL_TYPE_STYLES = {
-    saving:          { variant: "success", label: "Saving"          },
-    debt_repayment:  { variant: "danger",  label: "Debt Repayment"  },
+    saving:         { variant: "success", label: "Saving"         },
+    debt_repayment: { variant: "danger",  label: "Debt Repayment" },
 };
 
 const GOAL_TYPE_COLORS = {
@@ -16,18 +16,18 @@ function GoalRow({ goal }) {
     const { variant, label } = GOAL_TYPE_STYLES[goal.goal_type] ?? { variant: "default", label: goal.goal_type };
     const color    = GOAL_TYPE_COLORS[goal.goal_type] ?? "#10b981";
     const progress = Math.min(parseFloat(goal.progress), 100);
+    const symbol   = goal.currency_symbol ?? "$";
 
-    const isOverdue  = goal.deadline && new Date(goal.deadline) < new Date();
-    const daysLeft   = goal.deadline
+    const isOverdue = goal.deadline && new Date(goal.deadline) < new Date();
+    const daysLeft  = goal.deadline
         ? Math.ceil((new Date(goal.deadline) - new Date()) / (1000 * 60 * 60 * 24))
         : null;
 
     return (
         <div className="py-4 border-b border-skin-border last:border-0">
-            {/* Top row — name + badge */}
+            {/* ── Top row — name + badge ── */}
             <div className="flex items-start justify-between gap-3 mb-2">
                 <div className="flex items-center gap-2 min-w-0">
-                    {/* Icon */}
                     <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0
                         ${goal.goal_type === "saving"
                             ? "bg-emerald-500/10 border border-emerald-500/20"
@@ -48,7 +48,7 @@ function GoalRow({ goal }) {
                 <Badge variant={variant} size="sm">{label}</Badge>
             </div>
 
-            {/* Progress bar */}
+            {/* ── Progress bar ── */}
             <div className="h-1.5 bg-skin-hover rounded-full overflow-hidden mb-2">
                 <div
                     className="h-full rounded-full transition-all duration-700"
@@ -56,14 +56,14 @@ function GoalRow({ goal }) {
                 />
             </div>
 
-            {/* Bottom row — amounts + deadline */}
+            {/* ── Bottom row — amounts + deadline ── */}
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5">
                     <span className="text-skin-text text-xs font-semibold">
-                        {formatCurrency(goal.current_amount)}
+                        {formatCurrency(goal.current_amount, symbol)}
                     </span>
                     <span className="text-skin-text-muted text-xs">
-                        / {formatCurrency(goal.target_amount)}
+                        / {formatCurrency(goal.target_amount, symbol)}
                     </span>
                     <span className="text-skin-text-muted text-xs">
                         · {progress}%
@@ -93,7 +93,7 @@ function GoalRow({ goal }) {
 export default function DashboardGoals({ goals = [] }) {
     return (
         <Card padding="md">
-            {/* Header */}
+            {/* ── Header ── */}
             <div className="flex items-center justify-between mb-2">
                 <div>
                     <h2 className="text-skin-text font-semibold">Active Goals</h2>

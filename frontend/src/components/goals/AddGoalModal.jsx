@@ -11,16 +11,25 @@ const GOAL_TYPE_OPTIONS = [
   { value: "debt_repayment", label: "Debt Repayment" },
 ];
 
-export default function AddGoalModal({ onClose, onCreated }) {
+export default function AddGoalModal({ currencies = [], onClose, onCreated }) {
   const [form, setForm] = useState({
     goal_name:     "",
     goal_type:     "",
     target_amount: "",
     deadline:      "",
+    currency_id:   "",
   });
-  const [errors, setErrors]   = useState({});
+  const [errors, setErrors]     = useState({});
   const [apiError, setApiError] = useState("");
-  const [saving, setSaving]   = useState(false);
+  const [saving, setSaving]     = useState(false);
+
+  const currencyOptions = [
+    { value: "", label: "Select currency..." },
+    ...currencies.map((c) => ({
+      value: c.currency_id,
+      label: `${c.code} — ${c.name}`,
+    })),
+  ];
 
   const handle = (field) => (e) => {
     setForm((prev) => ({ ...prev, [field]: e.target.value }));
@@ -37,7 +46,19 @@ export default function AddGoalModal({ onClose, onCreated }) {
       setSaving(false);
       return;
     }
-    onCreated({ ...form, goal_id: result.goal_id, current_amount: 0 });
+
+    // ── Resolve currency details for optimistic UI ──
+    const selectedCurrency = currencies.find(
+      (c) => String(c.currency_id) === String(form.currency_id)
+    );
+
+    onCreated({
+      ...form,
+      goal_id:         result.goal_id,
+      current_amount:  0,
+      currency_code:   selectedCurrency?.code   ?? "",
+      currency_symbol: selectedCurrency?.symbol ?? "",
+    });
   };
 
   return (
@@ -58,6 +79,7 @@ export default function AddGoalModal({ onClose, onCreated }) {
           error={errors.goal_name}
         />
 
+        {/* ── Goal Type ── */}
         <div className="mb-4">
           <label className="block text-sm font-medium text-skin-text-secondary mb-1.5">
             Goal Type
@@ -74,6 +96,27 @@ export default function AddGoalModal({ onClose, onCreated }) {
                 <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
               </svg>
               {errors.goal_type}
+            </p>
+          )}
+        </div>
+
+        {/* ── Currency ── */}
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-skin-text-secondary mb-1.5">
+            Currency
+          </label>
+          <Select
+            value={form.currency_id}
+            onChange={handle("currency_id")}
+            options={currencyOptions}
+            className="w-full"
+          />
+          {errors.currency_id && (
+            <p className="mt-1.5 text-xs text-red-500 flex items-center gap-1">
+              <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+              {errors.currency_id}
             </p>
           )}
         </div>

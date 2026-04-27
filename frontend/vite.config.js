@@ -75,6 +75,11 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace('/api/accounts', '/FinHub/backend/ws/accounts/index.php'),
       },
+      "/api/exchange-rate": {
+        target: "http://localhost",
+        changeOrigin: true,
+        rewrite: (path) => path.replace('/api/exchange-rate', '/FinHub/backend/ws/exchange-rate/index.php'),
+      },
       "/api/goals/contributions": {
         target: "http://localhost",
         changeOrigin: true,

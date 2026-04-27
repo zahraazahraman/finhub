@@ -1,41 +1,42 @@
 import { useState, useEffect } from "react";
 import UserDashboardBLL from "../bll/UserDashboardBLL.js";
-import DashboardStatCard          from "../components/dashboard/DashboardStatCard.jsx";
-import DashboardFilters           from "../components/dashboard/DashboardFilters.jsx";
-import DashboardBarChart          from "../components/dashboard/DashboardBarChart.jsx";
-import DashboardDonutChart        from "../components/dashboard/DashboardDonutChart.jsx";
-import DashboardGoals             from "../components/dashboard/DashboardGoals.jsx";
+import CurrenciesBLL from "../bll/CurrenciesBLL.js";
+import DashboardStatCard           from "../components/dashboard/DashboardStatCard.jsx";
+import DashboardFilters            from "../components/dashboard/DashboardFilters.jsx";
+import DashboardBarChart           from "../components/dashboard/DashboardBarChart.jsx";
+import DashboardDonutChart         from "../components/dashboard/DashboardDonutChart.jsx";
+import DashboardGoals              from "../components/dashboard/DashboardGoals.jsx";
 import DashboardRecentTransactions from "../components/dashboard/DashboardRecentTransactions.jsx";
-import Spinner                    from "../components/ui/Spinner.jsx";
-import { formatCurrency }         from "../utils/formatters.js";
+import Select                      from "../components/ui/Select.jsx";
+import Spinner                     from "../components/ui/Spinner.jsx";
+import { formatCurrency }          from "../utils/formatters.js";
 
-// Default to current month
-const today      = new Date();
+const today        = new Date();
 const DEFAULT_FROM = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-01`;
-const DEFAULT_TO   = new Date(today.getFullYear(), today.getMonth() + 1, 0)
-    .toISOString().split("T")[0];
-const DEFAULT_CATEGORY_TYPE = "expense";
+const DEFAULT_TO   = new Date(today.getFullYear(), today.getMonth() + 1, 0).toISOString().split("T")[0];
+const DEFAULT_CURRENCY = "USD";
 
 export default function UserDashboard() {
-    // Filter state
-    const [from,         setFrom]         = useState(DEFAULT_FROM);
-    const [to,           setTo]           = useState(DEFAULT_TO);
-    const [categoryType, setCategoryType] = useState(DEFAULT_CATEGORY_TYPE);
+    // ── Filter state ──
+    const [from, setFrom] = useState(DEFAULT_FROM);
+    const [to,   setTo]   = useState(DEFAULT_TO);
 
-    // Pending filter state (applied only on click)
-    const [pendingFrom,         setPendingFrom]         = useState(DEFAULT_FROM);
-    const [pendingTo,           setPendingTo]           = useState(DEFAULT_TO);
-    const [pendingCategoryType, setPendingCategoryType] = useState(DEFAULT_CATEGORY_TYPE);
+    // ── Pending filter state ──
+    const [pendingFrom, setPendingFrom] = useState(DEFAULT_FROM);
+    const [pendingTo,   setPendingTo]   = useState(DEFAULT_TO);
 
-    // Data state
+    // ── Currency state ──
+    const [currencies,       setCurrencies]       = useState([]);
+    const [selectedCurrency, setSelectedCurrency] = useState(DEFAULT_CURRENCY);
+
+    // ── Data state ──
     const [data,    setData]    = useState(null);
     const [loading, setLoading] = useState(true);
     const [error,   setError]   = useState(null);
 
     const isFiltered =
         from !== DEFAULT_FROM ||
-        to   !== DEFAULT_TO   ||
-        categoryType !== DEFAULT_CATEGORY_TYPE;
+        to   !== DEFAULT_TO;
 
     const fetchData = async (params) => {
         setLoading(true);
@@ -49,51 +50,77 @@ export default function UserDashboard() {
         setLoading(false);
     };
 
-    // Initial load
+    // ── Initial load ──
     useEffect(() => {
-        fetchData({ from, to, categoryType });
+        const load = async () => {
+            const currResult = await CurrenciesBLL.getAll();
+            if (currResult.success) setCurrencies(currResult.currencies);
+
+            fetchData({
+                from,
+                to,
+                target_currency: DEFAULT_CURRENCY,
+            });
+        };
+        load();
     }, []);
+
+    // ── Re-fetch when selected currency changes ──
+    useEffect(() => {
+        if (!data) return; // skip on initial mount — already handled above
+        fetchData({
+            from,
+            to,
+            target_currency: selectedCurrency,
+        });
+    }, [selectedCurrency]);
 
     const handleApply = () => {
         setFrom(pendingFrom);
         setTo(pendingTo);
-        setCategoryType(pendingCategoryType);
         fetchData({
-            from:         pendingFrom,
-            to:           pendingTo,
-            categoryType: pendingCategoryType,
+            from:            pendingFrom,
+            to:              pendingTo,
+            target_currency: selectedCurrency,
         });
     };
 
     const handleReset = () => {
         setPendingFrom(DEFAULT_FROM);
         setPendingTo(DEFAULT_TO);
-        setPendingCategoryType(DEFAULT_CATEGORY_TYPE);
         setFrom(DEFAULT_FROM);
         setTo(DEFAULT_TO);
-        setCategoryType(DEFAULT_CATEGORY_TYPE);
         fetchData({
-            from:         DEFAULT_FROM,
-            to:           DEFAULT_TO,
-            categoryType: DEFAULT_CATEGORY_TYPE,
+            from:            DEFAULT_FROM,
+            to:              DEFAULT_TO,
+            target_currency: selectedCurrency,
         });
     };
 
-    // ── Derived display values ──────────────────────────────────────────
-    const totalBalance  = data ? formatCurrency(data.total_balance)  : "—";
-    const periodIncome  = data ? formatCurrency(data.period_income)  : "—";
-    const periodExpense = data ? formatCurrency(data.period_expense) : "—";
-    const netSavings    = data ? formatCurrency(Math.abs(data.net_savings)) : "—";
+    // ── Derived display values ──
+    const selectedCurrencyObj = currencies.find(
+        (c) => c.code.toUpperCase() === selectedCurrency
+    );
+    const currencySymbol = selectedCurrencyObj?.symbol ?? "$";
+
+    const totalBalance  = data ? formatCurrency(data.total_balance,  currencySymbol) : "—";
+    const periodIncome  = data ? formatCurrency(data.period_income,  currencySymbol) : "—";
+    const periodExpense = data ? formatCurrency(data.period_expense, currencySymbol) : "—";
+    const netSavings    = data ? formatCurrency(Math.abs(data.net_savings), currencySymbol) : "—";
     const netPositive   = data ? data.net_savings >= 0 : true;
 
-    // Multi-currency warning — if accounts have different currencies
     const hasMixedCurrencies = data
-        ? new Set(data.accounts.map((a) => a.currency_code)).size > 1
+        ? new Set((data.accounts ?? []).map((a) => a.currency_code)).size > 1
         : false;
+
+    const currencyOptions = currencies.map((c) => ({
+        value: c.code,
+        label: `${c.code} (${c.symbol})`,
+    }));
 
     return (
         <main className="animate-fade-in">
-            {/* Page header */}
+            {/* ── Header ── */}
             <div className="flex items-center justify-between mb-6">
                 <div>
                     <h1 className="text-2xl font-bold text-skin-text">Dashboard</h1>
@@ -101,44 +128,49 @@ export default function UserDashboard() {
                         Your financial overview for the selected period
                     </p>
                 </div>
+                <div className="w-40">
+                    <Select
+                        options={currencyOptions}
+                        value={selectedCurrency}
+                        onChange={(e) => setSelectedCurrency(e.target.value)}
+                    />
+                </div>
             </div>
 
-            {/* Mixed currency warning */}
+            {/* ── Mixed currency notice ── */}
             {hasMixedCurrencies && (
                 <div className="mb-4 flex items-center gap-2 px-4 py-3 rounded-xl
-                                bg-yellow-500/10 border border-yellow-500/20">
-                    <svg className="w-4 h-4 text-yellow-500 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-                        <line x1="12" y1="9" x2="12" y2="13"/>
-                        <line x1="12" y1="17" x2="12.01" y2="17"/>
+                                bg-blue-500/10 border border-blue-500/20">
+                    <svg className="w-4 h-4 text-blue-500 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="12" y1="8" x2="12" y2="12"/>
+                        <line x1="12" y1="16" x2="12.01" y2="16"/>
                     </svg>
-                    <p className="text-yellow-500 text-xs">
-                        Your accounts use different currencies. Total balance is a raw sum — treat it as approximate.
+                    <p className="text-blue-500 text-xs">
+                        Your accounts use different currencies. All amounts are converted to {selectedCurrency} using live rates.
                     </p>
                 </div>
             )}
 
-            {/* Filters */}
+            {/* ── Filters ── */}
             <DashboardFilters
                 from={pendingFrom}
                 to={pendingTo}
-                categoryType={pendingCategoryType}
                 onFromChange={setPendingFrom}
                 onToChange={setPendingTo}
-                onCategoryTypeChange={setPendingCategoryType}
                 onApply={handleApply}
                 onReset={handleReset}
                 isFiltered={isFiltered}
             />
 
-            {/* Global loading */}
+            {/* ── Loading ── */}
             {loading && (
                 <div className="flex items-center justify-center py-24">
                     <Spinner size="lg" />
                 </div>
             )}
 
-            {/* Global error */}
+            {/* ── Error ── */}
             {!loading && error && (
                 <div className="flex flex-col items-center justify-center py-24 text-center">
                     <div className="w-12 h-12 rounded-xl bg-red-500/10 border border-red-500/20
@@ -151,7 +183,7 @@ export default function UserDashboard() {
                     </div>
                     <p className="text-skin-text font-medium">{error}</p>
                     <button
-                        onClick={() => fetchData({ from, to, categoryType })}
+                        onClick={() => fetchData({ from, to, target_currency: selectedCurrency })}
                         className="mt-4 text-emerald-500 text-sm hover:underline"
                     >
                         Try again
@@ -159,15 +191,15 @@ export default function UserDashboard() {
                 </div>
             )}
 
-            {/* Dashboard content */}
+            {/* ── Content ── */}
             {!loading && !error && data && (
                 <>
-                    {/* Stat cards */}
+                    {/* ── Stat cards ── */}
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                         <DashboardStatCard
                             label="Total Balance"
                             value={totalBalance}
-                            sub={`Across ${data.accounts.length} account${data.accounts.length !== 1 ? "s" : ""}`}
+                            sub={`Across ${(data.accounts ?? []).length} account${(data.accounts ?? []).length !== 1 ? "s" : ""} (${selectedCurrency})`}
                             color="emerald"
                             icon={
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -179,7 +211,7 @@ export default function UserDashboard() {
                         <DashboardStatCard
                             label="Period Income"
                             value={periodIncome}
-                            sub="Total earned this period"
+                            sub={`Total earned · ${selectedCurrency}`}
                             color="blue"
                             icon={
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -191,7 +223,7 @@ export default function UserDashboard() {
                         <DashboardStatCard
                             label="Period Expenses"
                             value={periodExpense}
-                            sub="Total spent this period"
+                            sub={`Total spent · ${selectedCurrency}`}
                             color="red"
                             icon={
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -214,16 +246,15 @@ export default function UserDashboard() {
                         />
                     </div>
 
-                    {/* Charts row */}
+                    {/* ── Charts ── */}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                        <DashboardBarChart  data={data.monthly_totals} />
+                        <DashboardBarChart data={data.monthly_totals} />
                         <DashboardDonutChart
                             data={data.category_totals}
-                            categoryType={data.category_type}
                         />
                     </div>
 
-                    {/* Goals + Recent Transactions row */}
+                    {/* ── Goals + Recent Transactions ── */}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <DashboardGoals goals={data.active_goals} />
                         <DashboardRecentTransactions

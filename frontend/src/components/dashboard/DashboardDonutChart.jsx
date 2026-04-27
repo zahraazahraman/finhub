@@ -34,7 +34,7 @@ const CustomTooltip = ({ active, payload }) => {
     );
 };
 
-export default function DashboardDonutChart({ data = [], categoryType = "expense" }) {
+export default function DashboardDonutChart({ data = [] }) {
     // Shape data for Recharts
     const shaped = data.map((row) => ({
         name:  row.category_name,
@@ -48,18 +48,16 @@ export default function DashboardDonutChart({ data = [], categoryType = "expense
             {/* Header */}
             <div className="mb-6">
                 <h2 className="text-skin-text font-semibold">
-                    {categoryType === "expense" ? "Spending" : "Income"} by Category
+                    Spending by Category
                 </h2>
                 <p className="text-skin-text-muted text-xs mt-0.5">
-                    {categoryType === "expense"
-                        ? "Where your money is going this period"
-                        : "Where your money is coming from this period"}
+                    Where your money is going this period
                 </p>
             </div>
 
             {shaped.length === 0 ? (
                 <div className="flex items-center justify-center h-48 text-skin-text-muted text-sm">
-                    No {categoryType} data for this period.
+                    No expense data for this period.
                 </div>
             ) : (
                 <div className="flex flex-col gap-4">

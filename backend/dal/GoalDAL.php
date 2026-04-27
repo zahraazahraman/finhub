@@ -10,9 +10,11 @@ class GoalDAL {
 
     public function getByUser(int $userId): array {
         $stmt = $this->db->prepare(
-            "SELECT * FROM Goals
-             WHERE user_id = :user_id
-             ORDER BY created_at DESC"
+            "SELECT g.*, c.code AS currency_code, c.symbol AS currency_symbol
+             FROM Goals g
+             JOIN Currencies c ON g.currency_id = c.currency_id
+             WHERE g.user_id = :user_id
+             ORDER BY g.created_at DESC"
         );
         $stmt->execute([':user_id' => $userId]);
         return $stmt->fetchAll();
@@ -20,24 +22,29 @@ class GoalDAL {
 
     public function getById(int $goalId): ?array {
         $stmt = $this->db->prepare(
-            "SELECT * FROM Goals WHERE goal_id = :goal_id LIMIT 1"
+            "SELECT g.*, c.code AS currency_code, c.symbol AS currency_symbol
+             FROM Goals g
+             JOIN Currencies c ON g.currency_id = c.currency_id
+             WHERE g.goal_id = :goal_id
+             LIMIT 1"
         );
         $stmt->execute([':goal_id' => $goalId]);
         $result = $stmt->fetch();
         return $result ?: null;
     }
 
-    public function create(int $userId, string $name, string $type, float $target, ?string $deadline): int {
+    public function create(int $userId, string $name, string $type, float $target, ?string $deadline, int $currencyId): int {
         $stmt = $this->db->prepare(
-            "INSERT INTO Goals (user_id, goal_name, goal_type, target_amount, current_amount, deadline)
-             VALUES (:user_id, :name, :type, :target, 0.00, :deadline)"
+            "INSERT INTO Goals (user_id, goal_name, goal_type, target_amount, current_amount, deadline, currency_id)
+             VALUES (:user_id, :name, :type, :target, 0.00, :deadline, :currency_id)"
         );
         $stmt->execute([
-            ':user_id'  => $userId,
-            ':name'     => $name,
-            ':type'     => $type,
-            ':target'   => $target,
-            ':deadline' => $deadline,
+            ':user_id'     => $userId,
+            ':name'        => $name,
+            ':type'        => $type,
+            ':target'      => $target,
+            ':deadline'    => $deadline,
+            ':currency_id' => $currencyId,
         ]);
         return (int)$this->db->lastInsertId();
     }
@@ -83,17 +90,35 @@ class GoalDAL {
         return $result ?: null;
     }
 
-    public function createContribution(int $goalId, int $accountId, float $amount, string $date, ?string $description): int {
+    public function createContribution(
+        int $goalId,
+        int $accountId,
+        float $amount,
+        string $date,
+        ?string $description,
+        ?float $originalAmount,
+        ?string $originalCurrencyCode,
+        ?float $exchangeRate,
+        ?int $transactionId
+    ): int {
         $stmt = $this->db->prepare(
-            "INSERT INTO GoalContributions (goal_id, account_id, amount, contribution_date, description)
-             VALUES (:goal_id, :account_id, :amount, :date, :description)"
+            "INSERT INTO GoalContributions
+                (goal_id, account_id, amount, contribution_date, description,
+                 original_amount, original_currency_code, exchange_rate, transaction_id)
+             VALUES
+                (:goal_id, :account_id, :amount, :date, :description,
+                 :original_amount, :original_currency_code, :exchange_rate, :transaction_id)"
         );
         $stmt->execute([
-            ':goal_id'     => $goalId,
-            ':account_id'  => $accountId,
-            ':amount'      => $amount,
-            ':date'        => $date,
-            ':description' => $description,
+            ':goal_id'               => $goalId,
+            ':account_id'            => $accountId,
+            ':amount'                => $amount,
+            ':date'                  => $date,
+            ':description'           => $description,
+            ':original_amount'       => $originalAmount,
+            ':original_currency_code'=> $originalCurrencyCode,
+            ':exchange_rate'         => $exchangeRate,
+            ':transaction_id'        => $transactionId,
         ]);
         return (int)$this->db->lastInsertId();
     }

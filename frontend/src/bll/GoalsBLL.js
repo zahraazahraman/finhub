@@ -59,6 +59,17 @@ export default class GoalsBLL {
       errors.amount = "Amount must be greater than zero.";
     }
 
+    // Validate converted_amount if provided
+    if (formData.converted_amount !== undefined) {
+      errors.converted_amount = validators.required(formData.converted_amount, "Converted amount");
+      if (!errors.converted_amount) {
+        errors.converted_amount = validators.numeric(formData.converted_amount, "Converted amount");
+      }
+      if (!errors.converted_amount && parseFloat(formData.converted_amount) <= 0) {
+        errors.converted_amount = "Converted amount must be greater than zero.";
+      }
+    }
+
     Object.keys(errors).forEach(k => errors[k] === null && delete errors[k]);
     if (Object.keys(errors).length > 0) return { success: false, validationErrors: errors };
 

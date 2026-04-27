@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import GoalsBLL from "../bll/GoalsBLL.js";
 import AccountsBLL from "../bll/AccountsBLL.js";
+import CurrenciesBLL from "../bll/CurrenciesBLL.js";
 import Spinner from "../components/ui/Spinner.jsx";
 import Button from "../components/ui/Button.jsx";
 import Modal from "../components/ui/Modal.jsx";
@@ -11,36 +12,39 @@ import AddContributionModal from "../components/goals/AddContributionModal.jsx";
 
 export default function Goals() {
   // ── Data ──
-  const [goals, setGoals]               = useState([]);
-  const [accounts, setAccounts]         = useState([]);
+  const [goals, setGoals]                 = useState([]);
+  const [accounts, setAccounts]           = useState([]);
+  const [currencies, setCurrencies]       = useState([]);
   const [contributions, setContributions] = useState([]);
 
   // ── View ──
   const [selectedGoal, setSelectedGoal] = useState(null);
 
   // ── Loading ──
-  const [pageLoading, setPageLoading]         = useState(true);
+  const [pageLoading, setPageLoading]                   = useState(true);
   const [contributionsLoading, setContributionsLoading] = useState(false);
 
   // ── Modals ──
-  const [showAddGoal, setShowAddGoal]               = useState(false);
-  const [showAddContribution, setShowAddContribution] = useState(false);
-  const [deleteGoalTarget, setDeleteGoalTarget]       = useState(null);
+  const [showAddGoal, setShowAddGoal]                           = useState(false);
+  const [showAddContribution, setShowAddContribution]           = useState(false);
+  const [deleteGoalTarget, setDeleteGoalTarget]                 = useState(null);
   const [deleteContributionTarget, setDeleteContributionTarget] = useState(null);
 
   // ── Action loading ──
   const [deletingGoal, setDeletingGoal]               = useState(false);
   const [deletingContribution, setDeletingContribution] = useState(false);
 
-  // ── Load goals + accounts on mount ──
+  // ── Load goals + accounts + currencies on mount ──
   useEffect(() => {
     const load = async () => {
-      const [goalsResult, accountsResult] = await Promise.all([
+      const [goalsResult, accountsResult, currenciesResult] = await Promise.all([
         GoalsBLL.getAll(),
         AccountsBLL.getAll(),
+        CurrenciesBLL.getAll(),
       ]);
-      if (goalsResult.success)   setGoals(goalsResult.goals);
-      if (accountsResult.success) setAccounts(accountsResult.accounts);
+      if (goalsResult.success)      setGoals(goalsResult.goals);
+      if (accountsResult.success)   setAccounts(accountsResult.accounts);
+      if (currenciesResult.success) setCurrencies(currenciesResult.currencies);
       setPageLoading(false);
     };
     load();
@@ -76,25 +80,27 @@ export default function Goals() {
     setDeletingGoal(false);
   };
 
-  const handleContributed = (amount, accountId) => {
-    // ── Capture goal_id before any state changes ──
+  // contributionResult = { convertedAmount, originalAmount, accountId }
+  // convertedAmount → what goes toward the goal (goal currency)
+  // originalAmount  → what left the account (account currency)
+  const handleContributed = ({ convertedAmount, originalAmount, accountId }) => {
     const goalId = selectedGoal.goal_id;
 
-    // ── Update goal current_amount ──
+    // ── Update goal current_amount with converted amount ──
     setSelectedGoal((prev) => ({
       ...prev,
-      current_amount: parseFloat(prev.current_amount) + amount,
+      current_amount: parseFloat(prev.current_amount) + convertedAmount,
     }));
     setGoals((prev) => prev.map(g =>
-      g.goal_id === selectedGoal.goal_id
-        ? { ...g, current_amount: parseFloat(g.current_amount) + amount }
+      g.goal_id === goalId
+        ? { ...g, current_amount: parseFloat(g.current_amount) + convertedAmount }
         : g
     ));
 
-    // ── Update account balance ──
+    // ── Deduct original amount from account ──
     setAccounts((prev) => prev.map(a =>
       a.account_id === accountId
-        ? { ...a, balance: parseFloat(a.balance) - amount }
+        ? { ...a, balance: parseFloat(a.balance) - originalAmount }
         : a
     ));
 
@@ -114,24 +120,31 @@ export default function Goals() {
     setDeletingContribution(true);
     const result = await GoalsBLL.removeContribution(deleteContributionTarget.contribution_id);
     if (result.success) {
-      const amount    = parseFloat(deleteContributionTarget.amount);
-      const accountId = deleteContributionTarget.account_id;
+      // amount = converted (goal currency) — what leaves the goal
+      const convertedAmount = parseFloat(deleteContributionTarget.amount);
+      const accountId       = deleteContributionTarget.account_id;
+
+      // original_amount = what goes back to the account
+      // if null it was same-currency, refund the stored amount
+      const accountRefund = deleteContributionTarget.original_amount !== null
+        ? parseFloat(deleteContributionTarget.original_amount)
+        : convertedAmount;
 
       // ── Update goal current_amount ──
       setSelectedGoal((prev) => ({
         ...prev,
-        current_amount: Math.max(parseFloat(prev.current_amount) - amount, 0),
+        current_amount: Math.max(parseFloat(prev.current_amount) - convertedAmount, 0),
       }));
       setGoals((prev) => prev.map(g =>
         g.goal_id === selectedGoal.goal_id
-          ? { ...g, current_amount: Math.max(parseFloat(g.current_amount) - amount, 0) }
+          ? { ...g, current_amount: Math.max(parseFloat(g.current_amount) - convertedAmount, 0) }
           : g
       ));
 
-      // ── Update account balance ──
+      // ── Restore original amount to account ──
       setAccounts((prev) => prev.map(a =>
         a.account_id === accountId
-          ? { ...a, balance: parseFloat(a.balance) + amount }
+          ? { ...a, balance: parseFloat(a.balance) + accountRefund }
           : a
       ));
 
@@ -202,6 +215,7 @@ export default function Goals() {
       {/* ── Modals ── */}
       {showAddGoal && (
         <AddGoalModal
+          currencies={currencies}
           onClose={() => setShowAddGoal(false)}
           onCreated={handleGoalCreated}
         />

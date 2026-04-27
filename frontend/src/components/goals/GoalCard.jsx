@@ -1,5 +1,6 @@
 import Card from "../ui/Card.jsx";
 import Badge from "../ui/Badge.jsx";
+import { formatNumber } from "../../utils/formatters.js";
 
 const GOAL_TYPE_LABELS = {
   saving:          { label: "Saving",          variant: "info"   },
@@ -8,24 +9,30 @@ const GOAL_TYPE_LABELS = {
 
 function getDeadlineBadge(deadline) {
   if (!deadline) return null;
-  const today     = new Date();
-  const due       = new Date(deadline);
-  const daysLeft  = Math.ceil((due - today) / (1000 * 60 * 60 * 24));
+  const today    = new Date();
+  const due      = new Date(deadline);
+  const daysLeft = Math.ceil((due - today) / (1000 * 60 * 60 * 24));
 
-  if (daysLeft < 0)  return { label: "Overdue",               variant: "danger"  };
-  if (daysLeft <= 7) return { label: `${daysLeft}d left`,     variant: "warning" };
-  if (daysLeft <= 30) return { label: `${daysLeft}d left`,    variant: "info"    };
-  return { label: new Date(deadline).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }), variant: "default" };
+  if (daysLeft < 0)   return { label: "Overdue",            variant: "danger"  };
+  if (daysLeft <= 7)  return { label: `${daysLeft}d left`,  variant: "warning" };
+  if (daysLeft <= 30) return { label: `${daysLeft}d left`,  variant: "info"    };
+  return {
+    label: new Date(deadline).toLocaleDateString("en-GB", {
+      day: "numeric", month: "short", year: "numeric",
+    }),
+    variant: "default",
+  };
 }
 
 export default function GoalCard({ goal, onSelect, onDelete }) {
-  const progress    = Math.min((parseFloat(goal.current_amount) / parseFloat(goal.target_amount)) * 100, 100);
-  const isCompleted = progress >= 100;
-  const typeInfo    = GOAL_TYPE_LABELS[goal.goal_type] || { label: goal.goal_type, variant: "default" };
+  const progress      = Math.min((parseFloat(goal.current_amount) / parseFloat(goal.target_amount)) * 100, 100);
+  const isCompleted   = progress >= 100;
+  const typeInfo      = GOAL_TYPE_LABELS[goal.goal_type] || { label: goal.goal_type, variant: "default" };
   const deadlineBadge = getDeadlineBadge(goal.deadline);
+  const symbol        = goal.currency_symbol ?? "";
 
   return (
-    <Card hover padding="md" className="relative group" >
+    <Card hover padding="md" className="relative group">
 
       {/* ── Delete button ── */}
       <button
@@ -61,8 +68,8 @@ export default function GoalCard({ goal, onSelect, onDelete }) {
         {/* ── Progress bar ── */}
         <div className="mb-3">
           <div className="flex justify-between text-xs text-skin-text-muted mb-1.5">
-            <span>{parseFloat(goal.current_amount).toFixed(2)} saved</span>
-            <span>{parseFloat(goal.target_amount).toFixed(2)} goal</span>
+            <span>{symbol}{formatNumber(goal.current_amount)} saved</span>
+            <span>{symbol}{formatNumber(goal.target_amount)} goal</span>
           </div>
           <div className="w-full bg-skin-hover rounded-full h-2">
             <div

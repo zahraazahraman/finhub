@@ -2,6 +2,7 @@ import Badge from "../ui/Badge.jsx";
 import Button from "../ui/Button.jsx";
 import Table from "../ui/Table.jsx";
 import Spinner from "../ui/Spinner.jsx";
+import { formatNumber } from "../../utils/formatters.js";
 
 const GOAL_TYPE_LABELS = {
   saving:         { label: "Saving",         variant: "info"   },
@@ -21,6 +22,7 @@ export default function GoalDetail({
   const isCompleted = progress >= 100;
   const remaining   = Math.max(parseFloat(goal.target_amount) - parseFloat(goal.current_amount), 0);
   const typeInfo    = GOAL_TYPE_LABELS[goal.goal_type] || { label: goal.goal_type, variant: "default" };
+  const symbol      = goal.currency_symbol ?? "";
 
   const columns = [
     {
@@ -44,11 +46,21 @@ export default function GoalDetail({
     {
       key:    "amount",
       label:  "Amount",
-      render: (row) => (
-        <span className="text-emerald-500 font-semibold text-sm">
-          +{parseFloat(row.amount).toFixed(2)}
-        </span>
-      ),
+      render: (row) => {
+        const isCross = row.original_amount !== null && row.original_currency_code !== null;
+        return (
+          <div className="flex flex-col gap-0.5">
+            <span className="text-emerald-500 font-semibold text-sm">
+              +{symbol}{formatNumber(row.amount)}
+            </span>
+            {isCross && (
+              <span className="text-skin-text-muted text-xs">
+                {formatNumber(row.original_amount)} {row.original_currency_code}
+              </span>
+            )}
+          </div>
+        );
+      },
     },
     {
       key:    "description",
@@ -95,7 +107,10 @@ export default function GoalDetail({
 
         <div className="flex items-center gap-2">
           {!isCompleted && (
-            <Button variant="primary" size="sm" onClick={onAddContribution}
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={onAddContribution}
               icon={
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                   <line x1="12" y1="5" x2="12" y2="19" />
@@ -114,9 +129,10 @@ export default function GoalDetail({
       </div>
 
       {/* ── Goal header card ── */}
-      <div className="bg-skin-card border border-skin-border rounded-2xl p-6 mb-6 animate-slide-up"
-        style={{ boxShadow: "var(--shadow-md)" }}>
-
+      <div
+        className="bg-skin-card border border-skin-border rounded-2xl p-6 mb-6 animate-slide-up"
+        style={{ boxShadow: "var(--shadow-md)" }}
+      >
         {/* ── Name + badges ── */}
         <div className="flex items-start justify-between gap-4 mb-5">
           <h2 className="text-skin-text font-bold text-xl leading-snug">
@@ -142,19 +158,19 @@ export default function GoalDetail({
           <div className="bg-skin-secondary border border-skin-border rounded-xl px-4 py-3">
             <p className="text-xs text-skin-text-muted mb-1">Saved</p>
             <p className="text-lg font-bold text-emerald-500">
-              {parseFloat(goal.current_amount).toFixed(2)}
+              {symbol}{formatNumber(goal.current_amount)}
             </p>
           </div>
           <div className="bg-skin-secondary border border-skin-border rounded-xl px-4 py-3">
             <p className="text-xs text-skin-text-muted mb-1">Target</p>
             <p className="text-lg font-bold text-skin-text">
-              {parseFloat(goal.target_amount).toFixed(2)}
+              {symbol}{formatNumber(goal.target_amount)}
             </p>
           </div>
           <div className="bg-skin-secondary border border-skin-border rounded-xl px-4 py-3">
             <p className="text-xs text-skin-text-muted mb-1">Remaining</p>
             <p className={`text-lg font-bold ${isCompleted ? "text-emerald-500" : "text-skin-text"}`}>
-              {isCompleted ? "Done!" : remaining.toFixed(2)}
+              {isCompleted ? "Done!" : `${symbol}${formatNumber(remaining)}`}
             </p>
           </div>
         </div>

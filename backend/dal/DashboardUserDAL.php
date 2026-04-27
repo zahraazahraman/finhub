@@ -23,17 +23,20 @@ class DashboardUserDAL {
     }
 
     // Monthly income + expense totals — for bar chart (excludes transfers)
+    // Returns currency_code per row so BLL can convert before summing
     public function getMonthlyTotals(int $userId, string $from, string $to): array {
         $stmt = $this->db->prepare(
             "SELECT DATE_FORMAT(t.transaction_date, '%Y-%m') AS month,
                     t.transaction_type,
-                    SUM(t.amount) AS total
+                    SUM(t.amount) AS total,
+                    c.code AS currency_code
              FROM Transactions t
              JOIN Accounts a ON t.account_id = a.account_id
+             LEFT JOIN Currencies c ON a.currency_id = c.currency_id
              WHERE a.user_id = :user_id
                AND t.transaction_type IN ('income', 'expense')
                AND t.transaction_date BETWEEN :from AND :to
-             GROUP BY month, t.transaction_type
+             GROUP BY month, t.transaction_type, c.code
              ORDER BY month ASC"
         );
         $stmt->execute([':user_id' => $userId, ':from' => $from, ':to' => $to]);
@@ -41,35 +44,41 @@ class DashboardUserDAL {
     }
 
     // Category breakdown by type — for donut chart
+    // Returns currency_code per row so BLL can convert before summing
     public function getCategoryTotals(int $userId, string $type, string $from, string $to): array {
         $stmt = $this->db->prepare(
-            "SELECT COALESCE(c.name, 'Uncategorized') AS category_name,
-                    SUM(t.amount) AS total
+            "SELECT COALESCE(cat.name, 'Uncategorized') AS category_name,
+                    SUM(t.amount) AS total,
+                    c.code AS currency_code
              FROM Transactions t
              JOIN Accounts a ON t.account_id = a.account_id
-             LEFT JOIN Categories c ON t.category_id = c.category_id
+             LEFT JOIN Categories cat ON t.category_id = cat.category_id
+             LEFT JOIN Currencies c ON a.currency_id = c.currency_id
              WHERE a.user_id = :user_id
                AND t.transaction_type = :type
                AND t.transaction_date BETWEEN :from AND :to
-             GROUP BY t.category_id, category_name
+             GROUP BY t.category_id, category_name, c.code
              ORDER BY total DESC"
         );
         $stmt->execute([':user_id' => $userId, ':type' => $type, ':from' => $from, ':to' => $to]);
         return $stmt->fetchAll();
     }
 
-    // Period total for a single type — for stat cards
-    public function getPeriodTotal(int $userId, string $type, string $from, string $to): float {
+    // Period rows per currency — BLL converts and sums
+    public function getPeriodRows(int $userId, string $type, string $from, string $to): array {
         $stmt = $this->db->prepare(
-            "SELECT COALESCE(SUM(t.amount), 0)
+            "SELECT COALESCE(SUM(t.amount), 0) AS total,
+                    c.code AS currency_code
              FROM Transactions t
              JOIN Accounts a ON t.account_id = a.account_id
+             LEFT JOIN Currencies c ON a.currency_id = c.currency_id
              WHERE a.user_id = :user_id
                AND t.transaction_type = :type
-               AND t.transaction_date BETWEEN :from AND :to"
+               AND t.transaction_date BETWEEN :from AND :to
+             GROUP BY c.code"
         );
         $stmt->execute([':user_id' => $userId, ':type' => $type, ':from' => $from, ':to' => $to]);
-        return (float)$stmt->fetchColumn();
+        return $stmt->fetchAll();
     }
 
     // Last 10 transactions across all accounts — optional category filter
@@ -78,7 +87,7 @@ class DashboardUserDAL {
                        t.description, t.transaction_date, t.source_type,
                        a.account_name, a.account_type,
                        COALESCE(c.name, 'Uncategorized') AS category_name,
-                       cur.symbol AS currency_symbol
+                       cur.symbol AS currency_symbol, cur.code AS currency_code
                 FROM Transactions t
                 JOIN Accounts a ON t.account_id = a.account_id
                 LEFT JOIN Categories c ON t.category_id = c.category_id
@@ -100,15 +109,17 @@ class DashboardUserDAL {
         return $stmt->fetchAll();
     }
 
-    // Active goals (not 100% complete) — up to 3, for dashboard teaser
+    // Active goals — up to 3, for dashboard teaser
     public function getActiveGoals(int $userId): array {
         $stmt = $this->db->prepare(
-            "SELECT goal_id, goal_name, goal_type,
-                    target_amount, current_amount, deadline
-             FROM Goals
-             WHERE user_id = :user_id
-               AND current_amount < target_amount
-             ORDER BY deadline ASC
+            "SELECT g.goal_id, g.goal_name, g.goal_type,
+                    g.target_amount, g.current_amount, g.deadline,
+                    c.code AS currency_code, c.symbol AS currency_symbol
+             FROM Goals g
+             JOIN Currencies c ON g.currency_id = c.currency_id
+             WHERE g.user_id = :user_id
+               AND g.current_amount < g.target_amount
+             ORDER BY g.deadline ASC
              LIMIT 3"
         );
         $stmt->execute([':user_id' => $userId]);

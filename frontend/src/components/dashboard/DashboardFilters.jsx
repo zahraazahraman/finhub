@@ -1,14 +1,8 @@
 import Button from "../ui/Button.jsx";
-import Select from "../ui/Select.jsx";
-
-const CATEGORY_TYPE_OPTIONS = [
-    { value: "expense", label: "Expenses" },
-    { value: "income",  label: "Income"   },
-];
 
 export default function DashboardFilters({
-    from, to, categoryType,
-    onFromChange, onToChange, onCategoryTypeChange,
+    from, to,
+    onFromChange, onToChange,
     onApply, onReset,
     isFiltered,
 }) {
@@ -48,17 +42,6 @@ export default function DashboardFilters({
             {/* Divider */}
             <div className="w-px h-5 bg-skin-border hidden sm:block" />
 
-            {/* Category type toggle — for donut chart */}
-            <div className="flex items-center gap-2">
-                <span className="text-skin-text-secondary text-sm">Category View:</span>
-                <Select
-                    value={categoryType}
-                    onChange={(e) => onCategoryTypeChange(e.target.value)}
-                    options={CATEGORY_TYPE_OPTIONS}
-                    className="w-36"
-                />
-            </div>
-
             {/* Actions */}
             <div className="flex items-center gap-2 ml-auto">
                 {isFiltered && (
@@ -74,7 +57,7 @@ export default function DashboardFilters({
             {/* Active filter indicator */}
             {isFiltered && (
                 <p className="w-full text-emerald-500 text-xs">
-                    Filtered: {from || "—"} → {to || "—"} · {categoryType === "expense" ? "Expenses" : "Income"} breakdown
+                    Filtered: {from || "—"} → {to || "—"}
                 </p>
             )}
         </div>

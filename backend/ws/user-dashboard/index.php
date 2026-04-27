@@ -18,17 +18,17 @@ $user   = AuthMiddleware::getUser();
 $userId = (int)$user['user_id'];
 $bll    = new DashboardUserBLL();
 
-$from         = $_GET['from']          ?? null;
-$to           = $_GET['to']            ?? null;
-$categoryType = $_GET['category_type'] ?? 'expense';
-$categoryId   = isset($_GET['category_id']) ? (int)$_GET['category_id'] : null;
+$from           = $_GET['from']            ?? null;
+$to             = $_GET['to']              ?? null;
+$categoryType   = $_GET['category_type']   ?? 'expense';
+$targetCurrency = strtoupper(trim($_GET['target_currency'] ?? 'USD'));
+$categoryId     = isset($_GET['category_id']) ? (int)$_GET['category_id'] : null;
 
-// Sanitize category_id — treat 0 as null (no filter)
 if ($categoryId !== null && $categoryId <= 0) {
     $categoryId = null;
 }
 
-$result = $bll->getSummary($userId, $from, $to, $categoryType, $categoryId);
+$result = $bll->getSummary($userId, $from, $to, $categoryType, $categoryId, $targetCurrency);
 
 http_response_code(200);
 echo json_encode($result);

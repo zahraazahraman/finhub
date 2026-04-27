@@ -22,7 +22,11 @@ class AccountDAL {
 
     public function getById(int $accountId): ?array {
         $stmt = $this->db->prepare(
-            "SELECT * FROM Accounts WHERE account_id = :account_id LIMIT 1"
+            "SELECT a.*, c.code AS currency_code, c.symbol AS currency_symbol
+             FROM Accounts a
+             LEFT JOIN Currencies c ON a.currency_id = c.currency_id
+             WHERE a.account_id = :account_id
+             LIMIT 1"
         );
         $stmt->execute([':account_id' => $accountId]);
         $result = $stmt->fetch();
