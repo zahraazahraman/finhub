@@ -13,7 +13,6 @@ const INVESTMENT_TYPE_OPTIONS = [
   { value: "other",       label: "Other"           },
 ];
 
-// Reusable inline select + label + error pattern (matches AddGoalModal style)
 function SelectField({ label, value, onChange, options, error }) {
   return (
     <div className="mb-4">
@@ -88,47 +87,51 @@ export default function AddInvestmentModal({ currencies = [], onClose, onCreated
       title="Add Investment"
       description="Track a new investment in your portfolio."
       onClose={onClose}
-      size="md"
+      size="xl"
     >
-      <div className="px-6 pb-2 space-y-1">
+      {/* ── 2-column on sm+, 1-column on mobile ── */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-5">
 
-        <Input
-          id="investment_name"
-          label="Investment Name"
-          placeholder="e.g. Apple Inc., Bitcoin, Downtown Apartment"
-          value={form.investment_name}
-          onChange={handle("investment_name")}
-          error={errors.investment_name}
-        />
+        {/* ── Left column ── */}
+        <div>
+          <Input
+            id="investment_name"
+            label="Investment Name"
+            placeholder="e.g. Apple Inc., Bitcoin"
+            value={form.investment_name}
+            onChange={handle("investment_name")}
+            error={errors.investment_name}
+          />
 
-        <SelectField
-          label="Type"
-          value={form.investment_type}
-          onChange={handle("investment_type")}
-          options={INVESTMENT_TYPE_OPTIONS}
-          error={errors.investment_type}
-        />
+          <SelectField
+            label="Type"
+            value={form.investment_type}
+            onChange={handle("investment_type")}
+            options={INVESTMENT_TYPE_OPTIONS}
+            error={errors.investment_type}
+          />
 
-        <Input
-          id="symbol"
-          label="Ticker / Symbol"
-          placeholder="e.g. AAPL, BTC"
-          value={form.symbol}
-          onChange={handle("symbol")}
-          error={errors.symbol}
-          optional
-        />
+          <Input
+            id="symbol"
+            label="Ticker / Symbol"
+            placeholder="e.g. AAPL, BTC"
+            value={form.symbol}
+            onChange={handle("symbol")}
+            error={errors.symbol}
+            optional
+          />
 
-        <SelectField
-          label="Currency"
-          value={form.currency_id}
-          onChange={handle("currency_id")}
-          options={currencyOptions}
-          error={errors.currency_id}
-        />
+          <SelectField
+            label="Currency"
+            value={form.currency_id}
+            onChange={handle("currency_id")}
+            options={currencyOptions}
+            error={errors.currency_id}
+          />
+        </div>
 
-        {/* ── Quantity + Purchase Price side by side ── */}
-        <div className="grid grid-cols-2 gap-3">
+        {/* ── Right column ── */}
+        <div>
           <Input
             id="quantity"
             label="Quantity"
@@ -138,6 +141,7 @@ export default function AddInvestmentModal({ currencies = [], onClose, onCreated
             onChange={handle("quantity")}
             error={errors.quantity}
           />
+
           <Input
             id="purchase_price"
             label="Purchase Price"
@@ -147,49 +151,51 @@ export default function AddInvestmentModal({ currencies = [], onClose, onCreated
             onChange={handle("purchase_price")}
             error={errors.purchase_price}
           />
+
+          <Input
+            id="current_price"
+            label="Current Price"
+            type="number"
+            placeholder="0.00"
+            value={form.current_price}
+            onChange={handle("current_price")}
+            error={errors.current_price}
+            optional
+          />
+
+          <Input
+            id="purchase_date"
+            label="Purchase Date"
+            type="date"
+            value={form.purchase_date}
+            onChange={handle("purchase_date")}
+            error={errors.purchase_date}
+          />
+
+          <Input
+            id="notes"
+            label="Notes"
+            placeholder="Any notes about this investment..."
+            value={form.notes}
+            onChange={handle("notes")}
+            error={errors.notes}
+            optional
+          />
         </div>
-
-        <Input
-          id="current_price"
-          label="Current Price"
-          type="number"
-          placeholder="0.00"
-          value={form.current_price}
-          onChange={handle("current_price")}
-          error={errors.current_price}
-          optional
-        />
-
-        <Input
-          id="purchase_date"
-          label="Purchase Date"
-          type="date"
-          value={form.purchase_date}
-          onChange={handle("purchase_date")}
-          error={errors.purchase_date}
-        />
-
-        <Input
-          id="notes"
-          label="Notes"
-          placeholder="Any notes about this investment..."
-          value={form.notes}
-          onChange={handle("notes")}
-          error={errors.notes}
-          optional
-        />
-
-        {apiError && (
-          <p className="text-xs text-red-500 flex items-center gap-1 pb-1">
-            <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-            </svg>
-            {apiError}
-          </p>
-        )}
       </div>
 
-      <div className="px-6 pb-6 flex gap-3">
+      {/* ── API error ── */}
+      {apiError && (
+        <p className="text-xs text-red-500 flex items-center gap-1 pb-1">
+          <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+          </svg>
+          {apiError}
+        </p>
+      )}
+
+      {/* ── Actions ── */}
+      <div className="flex gap-3 pt-2 pb-2">
         <Button variant="secondary" className="flex-1" onClick={onClose}>Cancel</Button>
         <Button variant="primary"   className="flex-1" loading={saving} onClick={handleSubmit}>
           Add Investment

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import InvestmentsBLL from "../bll/InvestmentsBLL.js";
 import CurrenciesBLL from "../bll/CurrenciesBLL.js";
+import { useInvestmentAnalysis } from "../context/InvestmentAnalysisContext.jsx";
 import Spinner from "../components/ui/Spinner.jsx";
 import Button from "../components/ui/Button.jsx";
 import Modal from "../components/ui/Modal.jsx";
@@ -27,10 +28,13 @@ export default function Investments() {
   const [showAnalysis, setShowAnalysis]           = useState(false);
   const [showUpdatePrice, setShowUpdatePrice]     = useState(false);
 
-  // ── AI analysis state ──
-  const [analysis, setAnalysis]               = useState(null);
-  const [analysisLoading, setAnalysisLoading] = useState(false);
-  const [analysisError, setAnalysisError]     = useState("");
+  // ── Portfolio-level AI analysis (modal) ──
+  const [portfolioAnalysis, setPortfolioAnalysis]               = useState(null);
+  const [portfolioAnalysisLoading, setPortfolioAnalysisLoading] = useState(false);
+  const [portfolioAnalysisError, setPortfolioAnalysisError]     = useState("");
+
+  // ── Per-investment AI analysis (inline, persists via context) ──
+  const { getAnalysis, startAnalysis, setAnalysisResult, setAnalysisError } = useInvestmentAnalysis();
 
   // ── Action loading ──
   const [deleting, setDeleting] = useState(false);
@@ -50,7 +54,7 @@ export default function Investments() {
       setInvestments(loadedInvestments);
       setPageLoading(false);
 
-      // ── Silently refresh live prices for stock + crypto ──
+      // Silently refresh live prices for stock + crypto
       const hasAutoTracked = loadedInvestments.some(
         (i) => (i.investment_type === "stock" || i.investment_type === "crypto") && i.symbol
       );
@@ -63,9 +67,7 @@ export default function Investments() {
               const updated = priceResult.updated.find(
                 (u) => u.investment_id === inv.investment_id
               );
-              return updated
-                ? { ...inv, current_price: updated.current_price }
-                : inv;
+              return updated ? { ...inv, current_price: updated.current_price } : inv;
             })
           );
         }
@@ -74,8 +76,7 @@ export default function Investments() {
     load();
   }, []);
 
-  // ── Keep selectedInvestment in sync when investments state updates ──
-  // (so detail view reflects fresh prices without needing a re-click)
+  // Keep selectedInvestment in sync when investments state updates
   useEffect(() => {
     if (!selectedInvestment) return;
     const fresh = investments.find(
@@ -89,7 +90,6 @@ export default function Investments() {
     setInvestments((prev) => [newInvestment, ...prev]);
     setShowAddInvestment(false);
 
-    // Immediately fetch live price for new stock/crypto investments
     const shouldAutoFetch =
       (newInvestment.investment_type === "stock" || newInvestment.investment_type === "crypto")
       && newInvestment.symbol;
@@ -121,7 +121,6 @@ export default function Investments() {
     setDeleting(false);
   };
 
-  // Called by UpdatePriceModal on success
   const handlePriceUpdated = (investmentId, newPrice) => {
     setInvestments((prev) =>
       prev.map((inv) =>
@@ -133,15 +132,26 @@ export default function Investments() {
     setShowUpdatePrice(false);
   };
 
-  const handleAnalyze = async () => {
+  // ── Portfolio-level analysis (modal) ──
+  const handlePortfolioAnalyze = async () => {
     setShowAnalysis(true);
-    setAnalysis(null);
-    setAnalysisError("");
-    setAnalysisLoading(true);
+    setPortfolioAnalysis(null);
+    setPortfolioAnalysisError("");
+    setPortfolioAnalysisLoading(true);
     const result = await InvestmentsBLL.analyze();
-    if (result.success) setAnalysis(result.analysis);
-    else setAnalysisError(result.error);
-    setAnalysisLoading(false);
+    if (result.success) setPortfolioAnalysis(result.analysis);
+    else setPortfolioAnalysisError(result.error);
+    setPortfolioAnalysisLoading(false);
+  };
+
+  // ── Single-investment analysis (inline, context-persisted) ──
+  const handleAnalyzeSingle = async () => {
+    const id = selectedInvestment.investment_id;
+    // Clear previous result and mark as loading
+    startAnalysis(id);
+    const result = await InvestmentsBLL.analyzeSingle(id);
+    if (result.success) setAnalysisResult(id, result.analysis);
+    else setAnalysisError(id, result.error);
   };
 
   if (pageLoading) return (
@@ -166,7 +176,7 @@ export default function Investments() {
             {investments.length > 0 && (
               <Button
                 variant="secondary"
-                onClick={handleAnalyze}
+                onClick={handlePortfolioAnalyze}
                 icon={
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" />
@@ -174,7 +184,7 @@ export default function Investments() {
                 }
                 iconPosition="left"
               >
-                AI Analysis
+                Portfolio Analysis
               </Button>
             )}
             <Button
@@ -205,10 +215,11 @@ export default function Investments() {
       ) : (
         <InvestmentDetail
           investment={selectedInvestment}
-          analysis={analysis}
+          analysisState={getAnalysis(selectedInvestment.investment_id)}
           onBack={() => setSelectedInvestment(null)}
           onDelete={setDeleteTarget}
           onUpdatePrice={() => setShowUpdatePrice(true)}
+          onAnalyze={handleAnalyzeSingle}
         />
       )}
 
@@ -223,9 +234,9 @@ export default function Investments() {
 
       {showAnalysis && (
         <AIAnalysisModal
-          analysis={analysis}
-          loading={analysisLoading}
-          error={analysisError}
+          analysis={portfolioAnalysis}
+          loading={portfolioAnalysisLoading}
+          error={portfolioAnalysisError}
           investments={investments}
           onClose={() => setShowAnalysis(false)}
         />

@@ -62,37 +62,51 @@ class InvestmentBLL {
     }
 
     // ── Auto price update: stock (Finnhub) + crypto (CoinGecko) ──
-    // NOTE: Prices are fetched in USD. If the investment currency differs,
-    //       the stored current_price will be in USD. Currency conversion
-    //       is a future improvement.
+    // Prices are fetched in USD, then converted to each investment's currency.
     public function updatePrices(int $userId): array {
         $investments = $this->dal->getByUser($userId);
         $updated     = [];
 
         foreach ($investments as $inv) {
-            $type   = $inv['investment_type'];
-            $symbol = $inv['symbol'] ?? '';
+            $type         = $inv['investment_type'];
+            $symbol       = $inv['symbol'] ?? '';
+            $currencyCode = strtoupper(trim($inv['currency_code'] ?? 'USD'));
 
             // Only auto-update stock and crypto, and only if symbol is set
             if (!in_array($type, ['stock', 'crypto']) || empty($symbol)) {
                 continue;
             }
 
-            $price = null;
-
+            // Fetch live price in USD
+            $priceUsd = null;
             if ($type === 'stock') {
-                $price = $this->fetchStockPrice($symbol);
+                $priceUsd = $this->fetchStockPrice($symbol);
             } elseif ($type === 'crypto') {
-                $price = $this->fetchCryptoPrice($symbol);
+                $priceUsd = $this->fetchCryptoPrice($symbol);
             }
 
-            if ($price !== null && $price > 0) {
-                $this->dal->updateCurrentPrice((int)$inv['investment_id'], $price);
-                $updated[] = [
-                    'investment_id' => (int)$inv['investment_id'],
-                    'current_price' => $price,
-                ];
+            if ($priceUsd === null || $priceUsd <= 0) {
+                continue;
             }
+
+            // Convert USD → investment currency if needed
+            $finalPrice = $priceUsd;
+            if ($currencyCode !== 'USD') {
+                $rate = $this->getExchangeRate('USD', $currencyCode);
+                if ($rate !== null) {
+                    $finalPrice = round($priceUsd * $rate, 6);
+                }
+                // If rate fetch fails, skip this investment rather than store wrong currency
+                else {
+                    continue;
+                }
+            }
+
+            $this->dal->updateCurrentPrice((int)$inv['investment_id'], $finalPrice);
+            $updated[] = [
+                'investment_id' => (int)$inv['investment_id'],
+                'current_price' => $finalPrice,
+            ];
         }
 
         return ['success' => true, 'updated' => $updated];
@@ -109,7 +123,6 @@ class InvestmentBLL {
         if (!$investment || (int)$investment['user_id'] !== $userId)
             return ['success' => false, 'message' => 'Investment not found.'];
 
-        // Prevent calling this on stock/crypto — those are auto-tracked
         if (in_array($investment['investment_type'], ['stock', 'crypto']))
             return ['success' => false, 'message' => 'Stock and crypto prices are updated automatically.'];
 
@@ -117,8 +130,7 @@ class InvestmentBLL {
         return ['success' => true, 'current_price' => $price];
     }
 
-    // ── Finnhub: fetch stock quote ──
-    // Returns current price (field "c") or null on failure
+    // ── Finnhub: fetch stock quote in USD ──
     private function fetchStockPrice(string $symbol): ?float {
         $apiKey = $_ENV['FINNHUB_API_KEY'] ?? '';
         if (empty($apiKey)) return null;
@@ -136,9 +148,7 @@ class InvestmentBLL {
         return round((float)$data['c'], 6);
     }
 
-    // ── CoinGecko: fetch crypto price ──
-    // Step 1: search symbol → get CoinGecko coin ID
-    // Step 2: fetch price by ID in USD
+    // ── CoinGecko: fetch crypto price in USD ──
     private function fetchCryptoPrice(string $symbol): ?float {
         // Step 1 — resolve symbol to CoinGecko ID
         $searchUrl = "https://api.coingecko.com/api/v3/search?query=" . urlencode($symbol);
@@ -149,7 +159,6 @@ class InvestmentBLL {
         $searchData = json_decode($searchRes, true);
         $coins      = $searchData['coins'] ?? [];
 
-        // Find the first coin whose symbol matches exactly (case-insensitive)
         $coinId = null;
         foreach ($coins as $coin) {
             if (strtolower($coin['symbol']) === strtolower($symbol)) {
@@ -171,5 +180,45 @@ class InvestmentBLL {
         if (!isset($priceData[$coinId]['usd'])) return null;
 
         return round((float)$priceData[$coinId]['usd'], 6);
+    }
+
+    // ── Exchange rate: USD → target currency ──
+    // Uses Frankfurter first, falls back to open-source currency API.
+    private function getExchangeRate(string $from, string $to): ?float {
+        $rate = $this->tryFrankfurter($from, $to);
+        if ($rate !== null) return $rate;
+        return $this->tryOpenSourceAPI($from, $to);
+    }
+
+    private function tryFrankfurter(string $from, string $to): ?float {
+        $supported = [
+            'AUD','BRL','CAD','CHF','CNY','CZK','DKK','EUR','GBP','HKD','HUF',
+            'IDR','ILS','INR','ISK','JPY','KRW','MXN','MYR','NOK','NZD','PHP',
+            'PLN','RON','SEK','SGD','THB','TRY','USD','ZAR'
+        ];
+
+        if (!in_array($from, $supported) || !in_array($to, $supported)) return null;
+
+        $url      = "https://api.frankfurter.app/latest?from={$from}&to={$to}";
+        $response = @file_get_contents($url, false, stream_context_create(['http' => ['timeout' => 5]]));
+
+        if ($response === false) return null;
+
+        $data = json_decode($response, true);
+        if (!isset($data['rates'][$to])) return null;
+
+        return (float)$data['rates'][$to];
+    }
+
+    private function tryOpenSourceAPI(string $from, string $to): ?float {
+        $url      = "https://cdn.jsdelivr.net/gh/fawazahmed0/currency-api@1/latest/currencies/" . strtolower($from) . ".min.json";
+        $response = @file_get_contents($url, false, stream_context_create(['http' => ['timeout' => 5]]));
+
+        if ($response === false) return null;
+
+        $data = json_decode($response, true);
+        if (!isset($data[strtolower($from)][strtolower($to)])) return null;
+
+        return (float)$data[strtolower($from)][strtolower($to)];
     }
 }

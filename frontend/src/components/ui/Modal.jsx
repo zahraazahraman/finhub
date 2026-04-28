@@ -14,7 +14,6 @@ export default function Modal({
   onConfirm,
   loading = false,
 }) {
-  // Close on Escape key
   useEffect(() => {
     const handleKey = (e) => {
       if (e.key === "Escape") onClose();
@@ -38,7 +37,8 @@ export default function Modal({
       }}
     >
       <div
-        className={`border border-skin-border rounded-2xl w-full ${sizes[size]} animate-slide-up`}
+        className={`border border-skin-border rounded-2xl w-full ${sizes[size]} animate-slide-up
+                    max-h-[90vh] overflow-y-auto flex flex-col`}
         style={{
           boxShadow: "var(--shadow-lg)",
           backgroundColor: "var(--bg-card)",
@@ -46,7 +46,7 @@ export default function Modal({
       >
         {/* Header */}
         {(title || description) && (
-          <div className="px-6 pt-6 pb-4">
+          <div className="px-6 pt-6 pb-4 flex-shrink-0">
             {title && (
               <h3 className="text-skin-text font-semibold text-lg">{title}</h3>
             )}
@@ -59,11 +59,11 @@ export default function Modal({
         )}
 
         {/* Body */}
-        {children && <div className="px-6 pb-4">{children}</div>}
+        {children && <div className="px-6 pb-4 flex-1 min-h-0">{children}</div>}
 
         {/* Footer */}
         {showFooter && (
-          <div className="px-6 pb-6 flex gap-3">
+          <div className="px-6 pb-6 flex gap-3 flex-shrink-0">
             <Button variant="secondary" className="flex-1" onClick={onClose}>
               {cancelLabel}
             </Button>

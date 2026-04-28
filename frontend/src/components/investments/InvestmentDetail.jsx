@@ -1,6 +1,7 @@
 import Card from "../ui/Card.jsx";
 import Badge from "../ui/Badge.jsx";
 import Button from "../ui/Button.jsx";
+import Spinner from "../ui/Spinner.jsx";
 
 const TYPE_CONFIG = {
   stock:       { label: "Stock",       variant: "info"    },
@@ -24,8 +25,8 @@ const RISK_CONFIG = {
 function computeMetrics(inv) {
   const qty          = parseFloat(inv.quantity);
   const buyPrice     = parseFloat(inv.purchase_price);
-  const rawCur = parseFloat(inv.current_price);
-  const curPrice = (!isNaN(rawCur) && rawCur > 0) ? rawCur : buyPrice;
+  const rawCur       = parseFloat(inv.current_price);
+  const curPrice     = (!isNaN(rawCur) && rawCur > 0) ? rawCur : buyPrice;
   const costBasis    = qty * buyPrice;
   const currentValue = qty * curPrice;
   const profitLoss   = currentValue - costBasis;
@@ -44,7 +45,105 @@ function StatCard({ label, value, highlight }) {
 
 const isAutoTracked = (type) => type === "stock" || type === "crypto";
 
-export default function InvestmentDetail({ investment, onBack, onDelete, onUpdatePrice, analysis }) {
+// ── Skeleton shown while analysis is loading ──
+function AnalysisSkeleton() {
+  return (
+    <Card padding="md" className="animate-pulse">
+      <div className="flex items-center gap-2 mb-4">
+        <div className="w-4 h-4 rounded bg-skin-hover" />
+        <div className="h-4 w-36 rounded bg-skin-hover" />
+      </div>
+      <div className="flex gap-2 mb-4">
+        <div className="h-6 w-16 rounded-full bg-skin-hover" />
+        <div className="h-6 w-20 rounded-full bg-skin-hover" />
+      </div>
+      <div className="space-y-2">
+        <div className="h-3 w-full rounded bg-skin-hover" />
+        <div className="h-3 w-5/6 rounded bg-skin-hover" />
+        <div className="h-3 w-4/6 rounded bg-skin-hover" />
+      </div>
+    </Card>
+  );
+}
+
+// ── Full analysis panel ──
+function AnalysisPanel({ analysis }) {
+  const rec  = RECOMMENDATION_CONFIG[analysis.recommendation];
+  const risk = RISK_CONFIG[analysis.risk_level];
+
+  return (
+    <Card padding="md">
+      {/* Header */}
+      <div className="flex items-center gap-2 mb-4">
+        <svg className="w-4 h-4 text-skin-text-muted" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" />
+        </svg>
+        <h3 className="text-skin-text font-semibold text-sm">AI Analysis</h3>
+      </div>
+
+      {/* Badges */}
+      <div className="flex items-center gap-2 mb-5">
+        {rec  && <Badge variant={rec.variant}  size="md">{rec.label}</Badge>}
+        {risk && <Badge variant={risk.variant} size="sm">{risk.label}</Badge>}
+      </div>
+
+      {/* 2-column grid on sm+, 1-column on mobile */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+
+        <div>
+          <p className="text-skin-text-muted text-xs font-semibold uppercase tracking-wide mb-1.5">
+            Performance
+          </p>
+          <p className="text-skin-text-secondary text-sm leading-relaxed">
+            {analysis.performance_summary}
+          </p>
+        </div>
+
+        <div>
+          <p className="text-skin-text-muted text-xs font-semibold uppercase tracking-wide mb-1.5">
+            Market Context
+          </p>
+          <p className="text-skin-text-secondary text-sm leading-relaxed">
+            {analysis.market_context}
+          </p>
+        </div>
+
+        <div>
+          <p className="text-skin-text-muted text-xs font-semibold uppercase tracking-wide mb-1.5">
+            Action Advice
+          </p>
+          <p className="text-skin-text-secondary text-sm leading-relaxed">
+            {analysis.action_advice}
+          </p>
+        </div>
+
+        <div>
+          <p className="text-skin-text-muted text-xs font-semibold uppercase tracking-wide mb-1.5">
+            Key Factors
+          </p>
+          <ul className="space-y-1">
+            {(analysis.key_factors ?? []).map((factor, i) => (
+              <li key={i} className="flex items-start gap-2 text-sm text-skin-text-secondary">
+                <span className="text-emerald-500 mt-0.5 flex-shrink-0">•</span>
+                {factor}
+              </li>
+            ))}
+          </ul>
+        </div>
+
+      </div>
+    </Card>
+  );
+}
+
+export default function InvestmentDetail({
+  investment,
+  onBack,
+  onDelete,
+  onUpdatePrice,
+  onAnalyze,
+  analysisState, // { loading, error, data } | null — from context
+}) {
   const typeConfig = TYPE_CONFIG[investment.investment_type] || TYPE_CONFIG.other;
   const { qty, buyPrice, curPrice, costBasis, currentValue, profitLoss, roi } = computeMetrics(investment);
   const isPositive = profitLoss >= 0;
@@ -53,9 +152,7 @@ export default function InvestmentDetail({ investment, onBack, onDelete, onUpdat
   const fmt = (n) =>
     sym + n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-  const invAnalysis = analysis?.investments?.find(
-    (a) => a.investment_id === investment.investment_id
-  );
+  const isAnalyzing = analysisState?.loading ?? false;
 
   return (
     <div className="animate-fade-in">
@@ -100,7 +197,25 @@ export default function InvestmentDetail({ investment, onBack, onDelete, onUpdat
 
         {/* ── Action buttons ── */}
         <div className="flex items-center gap-2">
-          {/* Update Price button — only for manual types */}
+          {/* AI Analyze button */}
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={onAnalyze}
+            loading={isAnalyzing}
+            icon={
+              !isAnalyzing && (
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" />
+                </svg>
+              )
+            }
+            iconPosition="left"
+          >
+            {isAnalyzing ? "Analyzing..." : "Analyze"}
+          </Button>
+
+          {/* Update Price — only for manual types */}
           {!isAutoTracked(investment.investment_type) && (
             <Button
               variant="secondary"
@@ -182,30 +297,19 @@ export default function InvestmentDetail({ investment, onBack, onDelete, onUpdat
         )}
       </div>
 
-      {/* ── AI Recommendation panel ── */}
-      {invAnalysis && (
+      {/* ── Inline AI Analysis ── */}
+      {analysisState?.loading && <AnalysisSkeleton />}
+
+      {!analysisState?.loading && analysisState?.error && (
         <Card padding="md">
-          <div className="flex items-center gap-2 mb-4">
-            <svg className="w-4 h-4 text-skin-text-muted" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" />
-            </svg>
-            <h3 className="text-skin-text font-semibold text-sm">AI Recommendation</h3>
-          </div>
-          <div className="flex items-center gap-2 mb-3">
-            {RECOMMENDATION_CONFIG[invAnalysis.recommendation] && (
-              <Badge variant={RECOMMENDATION_CONFIG[invAnalysis.recommendation].variant} size="md">
-                {RECOMMENDATION_CONFIG[invAnalysis.recommendation].label}
-              </Badge>
-            )}
-            {RISK_CONFIG[invAnalysis.risk_level] && (
-              <Badge variant={RISK_CONFIG[invAnalysis.risk_level].variant} size="sm">
-                {RISK_CONFIG[invAnalysis.risk_level].label}
-              </Badge>
-            )}
-          </div>
-          <p className="text-skin-text-secondary text-sm leading-relaxed">{invAnalysis.reasoning}</p>
+          <p className="text-red-500 text-sm text-center">{analysisState.error}</p>
         </Card>
       )}
+
+      {!analysisState?.loading && analysisState?.data && (
+        <AnalysisPanel analysis={analysisState.data} />
+      )}
+
     </div>
   );
 }

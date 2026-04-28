@@ -90,15 +90,20 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace('/api/goals', '/FinHub/backend/ws/goals/index.php'),
       },
-      "/api/investments/update-prices": {
+      "/api/investments/analyze-single": {
         target: "http://localhost",
         changeOrigin: true,
-        rewrite: () => '/FinHub/backend/ws/investments/update-prices.php',
+        rewrite: () => '/FinHub/backend/ws/investments/analyze-single.php',
       },
       "/api/investments/analyze": {
         target: "http://localhost",
         changeOrigin: true,
         rewrite: () => '/FinHub/backend/ws/investments/analyze.php',
+      },
+      "/api/investments/update-prices": {
+        target: "http://localhost",
+        changeOrigin: true,
+        rewrite: () => '/FinHub/backend/ws/investments/update-prices.php',
       },
       "/api/investments": {
         target: "http://localhost",

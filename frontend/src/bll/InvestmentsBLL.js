@@ -54,15 +54,12 @@ export default class InvestmentsBLL {
     return { success: false, error: data.message || "Failed to delete investment." };
   }
 
-  // Triggers auto price refresh (stock + crypto) via Finnhub/CoinGecko
-  // Returns { success, updated: [{ investment_id, current_price }] }
   static async updatePrices() {
     const { ok, data } = await InvestmentsDAL.updatePrices();
     if (ok && data.success) return { success: true, updated: data.updated };
     return { success: false, error: data.message || "Failed to refresh prices." };
   }
 
-  // Manual price update for real_estate / other
   static async updateManualPrice(id, price) {
     if (!price && price !== 0)
       return { success: false, validationErrors: { current_price: "Price is required." } };
@@ -78,8 +75,16 @@ export default class InvestmentsBLL {
     return { success: false, error: data.message || "Failed to update price." };
   }
 
+  // Portfolio-level analysis
   static async analyze() {
     const { ok, data } = await InvestmentsDAL.analyze();
+    if (ok && data.success) return { success: true, analysis: data.analysis };
+    return { success: false, error: data.message || "AI analysis failed." };
+  }
+
+  // Single-investment deep analysis
+  static async analyzeSingle(investmentId) {
+    const { ok, data } = await InvestmentsDAL.analyzeSingle(investmentId);
     if (ok && data.success) return { success: true, analysis: data.analysis };
     return { success: false, error: data.message || "AI analysis failed." };
   }

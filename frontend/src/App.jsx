@@ -3,6 +3,7 @@ import { AuthProvider } from "./context/AuthContext.jsx";
 import { NotificationProvider } from "./context/NotificationContext.jsx";
 import { UserProvider } from "./context/UserContext.jsx";
 import { ThemeProvider } from "./context/ThemeContext.jsx";
+import { InvestmentAnalysisProvider } from "./context/InvestmentAnalysisContext.jsx";
 import ProtectedRoute from "./components/common/ProtectedRoute.jsx";
 import UserProtectedRoute from "./components/common/UserProtectedRoute.jsx";
 
@@ -38,52 +39,54 @@ export default function App() {
         <AuthProvider>
           <NotificationProvider>
             <UserProvider>
-              <Routes>
-                {/* Public */}
-                <Route path="/" element={<LandingPage />} />
-                <Route path="/login" element={<UserLoginPage />} />
-                <Route path="/register" element={<RegisterPage />} />
-                <Route path="/admin/login" element={<AdminLoginPage />} />
+              <InvestmentAnalysisProvider>
+                <Routes>
+                  {/* Public */}
+                  <Route path="/" element={<LandingPage />} />
+                  <Route path="/login" element={<UserLoginPage />} />
+                  <Route path="/register" element={<RegisterPage />} />
+                  <Route path="/admin/login" element={<AdminLoginPage />} />
 
-                {/* Admin - protected */}
-                <Route
-                  path="/admin"
-                  element={
-                    <ProtectedRoute>
-                      <AdminLayout />
-                    </ProtectedRoute>
-                  }
-                >
-                  <Route index element={<Navigate to="dashboard" replace />} />
-                  <Route path="dashboard" element={<Dashboard />} />
-                  <Route path="users" element={<Users />} />
-                  <Route path="consultants" element={<Consultants />} />
-                  <Route path="categories" element={<Categories />} />
-                  <Route path="notifications" element={<AdminNotifications />} />
-                  <Route path="user-notifications" element={<UserNotifications />} />
-                </Route>
+                  {/* Admin - protected */}
+                  <Route
+                    path="/admin"
+                    element={
+                      <ProtectedRoute>
+                        <AdminLayout />
+                      </ProtectedRoute>
+                    }
+                  >
+                    <Route index element={<Navigate to="dashboard" replace />} />
+                    <Route path="dashboard" element={<Dashboard />} />
+                    <Route path="users" element={<Users />} />
+                    <Route path="consultants" element={<Consultants />} />
+                    <Route path="categories" element={<Categories />} />
+                    <Route path="notifications" element={<AdminNotifications />} />
+                    <Route path="user-notifications" element={<UserNotifications />} />
+                  </Route>
 
-                {/* User - protected */}
-                <Route
-                  path="/"
-                  element={
-                    <UserProtectedRoute>
-                      <UserLayout />
-                    </UserProtectedRoute>
-                  }
-                >
-                  <Route path="dashboard" element={<UserDashboard />} />
-                  <Route path="accounts" element={<Accounts />} />
-                  <Route path="goals" element={<Goals />} />
-                  <Route path="investments" element={<Investments />} />
-                  <Route path="consultants" element={<UserConsultants />} />
-                  <Route path="reminders" element={<Reminders />} />
-                  <Route path="notifications" element={<UserNotificationsPage />} />
-                </Route>
+                  {/* User - protected */}
+                  <Route
+                    path="/"
+                    element={
+                      <UserProtectedRoute>
+                        <UserLayout />
+                      </UserProtectedRoute>
+                    }
+                  >
+                    <Route path="dashboard" element={<UserDashboard />} />
+                    <Route path="accounts" element={<Accounts />} />
+                    <Route path="goals" element={<Goals />} />
+                    <Route path="investments" element={<Investments />} />
+                    <Route path="consultants" element={<UserConsultants />} />
+                    <Route path="reminders" element={<Reminders />} />
+                    <Route path="notifications" element={<UserNotificationsPage />} />
+                  </Route>
 
-                {/* Fallback */}
-                <Route path="*" element={<Navigate to="/" replace />} />
-              </Routes>
+                  {/* Fallback */}
+                  <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
+              </InvestmentAnalysisProvider>
             </UserProvider>
           </NotificationProvider>
         </AuthProvider>
