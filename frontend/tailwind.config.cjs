@@ -6,24 +6,27 @@ export default {
     extend: {
       colors: {
         brand: {
-          DEFAULT: "#10b981",
-          dark:    "#059669",
-          light:   "#34d399",
+          DEFAULT: "var(--brand)",
+          dark:    "var(--brand-dark)",
+          light:   "var(--brand-light)",
         },
         skin: {
-          base:         "var(--bg-primary)",
-          secondary:    "var(--bg-secondary)",
-          card:         "var(--bg-card)",
-          input:        "var(--bg-input)",
-          hover:        "var(--bg-hover)",
-          border:       "var(--border)",
-          "border-subtle": "var(--border-subtle)",
-          text:         "var(--text-primary)",
+          base:             "var(--bg-primary)",
+          secondary:        "var(--bg-secondary)",
+          card:             "var(--bg-card)",
+          input:            "var(--bg-input)",
+          hover:            "var(--bg-hover)",
+          border:           "var(--border)",
+          "border-subtle":  "var(--border-subtle)",
+          text:             "var(--text-primary)",
           "text-secondary": "var(--text-secondary)",
-          "text-muted": "var(--text-muted)",
-          sidebar:      "var(--sidebar-bg)",
+          "text-muted":     "var(--text-muted)",
+          sidebar:          "var(--sidebar-bg)",
           "sidebar-border": "var(--sidebar-border)",
-          topbar:       "var(--topbar-bg)",
+          topbar:           "var(--topbar-bg)",
+          // Pre-computed brand opacity variants
+          // (CSS variable colors can't use Tailwind's /opacity modifier)
+          "brand-subtle":   "var(--brand-subtle)",
         },
       },
       animation: {

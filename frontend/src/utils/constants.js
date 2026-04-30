@@ -67,3 +67,6 @@ export const TRANSACTION_SOURCE_TYPES = ["manual", "csv", "receipt"];
 
 // Goal contribution category ID (reference from backend PHP constant)
 export const GOAL_CONTRIBUTION_CATEGORY_ID = 19;
+
+// Consultant rating
+export const CONSULTANT_RATING_MAX = 5;

@@ -30,6 +30,16 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace('/api/users', '/FinHub/backend/ws/users/index.php'),
       },
+      "/api/user-consultants": {
+        target: "http://localhost",
+        changeOrigin: true,
+        rewrite: (path) => path.replace('/api/user-consultants', '/FinHub/backend/ws/user-consultants/index.php'),
+      },
+      "/api/chat": {
+        target: "http://localhost",
+        changeOrigin: true,
+        rewrite: (path) => path.replace('/api/chat', '/FinHub/backend/ws/chat/index.php'),
+      },
       "/api/public/consultants": {
         target: "http://localhost",
         changeOrigin: true,
