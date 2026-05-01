@@ -120,6 +120,26 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace('/api/investments', '/FinHub/backend/ws/investments/index.php'),
       },
+      "/api/reminders/send-due": {
+        target: "http://localhost",
+        changeOrigin: true,
+        rewrite: () => '/FinHub/backend/ws/reminders/send-due.php',
+      },
+      "/api/reminders/weekly-summary": {
+        target: "http://localhost",
+        changeOrigin: true,
+        rewrite: () => '/FinHub/backend/ws/reminders/weekly-summary.php',
+      },
+      "/api/reminders": {
+        target: "http://localhost",
+        changeOrigin: true,
+        rewrite: (path) => path.replace('/api/reminders', '/FinHub/backend/ws/reminders/index.php'),
+      },
+      "/api/bills": {
+        target: "http://localhost",
+        changeOrigin: true,
+        rewrite: (path) => path.replace('/api/bills', '/FinHub/backend/ws/bills/index.php'),
+      },
       "/api/transactions/scan-receipt": {
         target: "http://localhost",
         changeOrigin: true,

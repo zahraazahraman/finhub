@@ -70,3 +70,27 @@ export const GOAL_CONTRIBUTION_CATEGORY_ID = 19;
 
 // Consultant rating
 export const CONSULTANT_RATING_MAX = 5;
+
+// ── Bills ──
+export const BILL_RECURRENCE_TYPES = ['monthly', 'yearly', 'none'];
+
+export const BILL_RECURRENCE_LABELS = {
+  monthly: 'Monthly',
+  yearly:  'Yearly',
+  none:    'One-time',
+};
+
+export const BILL_RECURRENCE_STYLES = {
+  monthly: 'info',
+  yearly:  'purple',
+  none:    'default',
+};
+
+export const BILL_REMINDER_DAYS_OPTIONS = [
+  { value: 1,  label: '1 day before' },
+  { value: 3,  label: '3 days before' },
+  { value: 7,  label: '7 days before' },
+  { value: 14, label: '14 days before' },
+];
+
+export const MAX_REMINDERS_PER_USER = 10;

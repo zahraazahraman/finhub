@@ -3,6 +3,8 @@ export default function Card({
   className = "",
   padding = "md",
   hover = false,
+  onClick,
+  ...props
 }) {
   const paddings = {
     none: "",
@@ -12,14 +14,18 @@ export default function Card({
   };
 
   return (
-    <div className={`
+    <div
+      className={`
       bg-skin-card border border-skin-border rounded-2xl
       transition-all duration-150 animate-slide-up
       ${paddings[padding]}
       ${hover ? "hover:shadow-md cursor-pointer" : ""}
       ${className}
     `}
-    style={{ boxShadow: 'var(--shadow-md)' }}>
+      style={{ boxShadow: 'var(--shadow-md)' }}
+      onClick={onClick}
+      {...props}
+    >
       {children}
     </div>
   );
