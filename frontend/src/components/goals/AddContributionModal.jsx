@@ -137,15 +137,22 @@ export default function AddContributionModal({ goal, accounts, onClose, onContri
     if (submitBlocked) return;
     setSaving(true);
 
-    const result = await GoalsBLL.addContribution({
-      ...form,
+    const payload = {
+      account_id: form.account_id,
+      amount: form.amount,
+      contribution_date: form.contribution_date,
+      description: form.description,
       goal_id: goal.goal_id,
-      ...(isCrossCurrency && {
-        converted_amount: conversionInfo?.manualRequired
-          ? form.converted_amount
-          : conversionInfo?.convertedAmount
-      }),
-    });
+    };
+
+    // Only include converted_amount if cross-currency
+    if (isCrossCurrency) {
+      payload.converted_amount = conversionInfo?.manualRequired
+        ? form.converted_amount
+        : conversionInfo?.convertedAmount;
+    }
+
+    const result = await GoalsBLL.addContribution(payload);
 
     if (!result.success) {
       if (result.validationErrors) setErrors(result.validationErrors);
@@ -154,7 +161,7 @@ export default function AddContributionModal({ goal, accounts, onClose, onContri
       return;
     }
 
-    // Pass structured result to Goals.jsx handler
+    // ── Notify parent and close modal ──
     onContributed({
       convertedAmount: isCrossCurrency && conversionInfo.manualRequired
         ? parseFloat(form.converted_amount)
@@ -164,6 +171,8 @@ export default function AddContributionModal({ goal, accounts, onClose, onContri
       originalAmount: parseFloat(form.amount),
       accountId:      parseInt(form.account_id),
     });
+    setSaving(false);
+    onClose();
   };
 
   return (

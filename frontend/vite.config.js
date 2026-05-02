@@ -65,10 +65,15 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace('/api/user-notifications', '/FinHub/backend/ws/user-notifications/index.php'),
       },
+      "/api/my-notifications": {
+        target: "http://localhost",
+        changeOrigin: true,
+        rewrite: (path) => path.replace('/api/my-notifications', '/FinHub/backend/ws/my-notifications/index.php'),
+      },
       "/api/user-dashboard": {
-          target: "http://localhost",
-          changeOrigin: true,
-          rewrite: (path) => path.replace('/api/user-dashboard', '/FinHub/backend/ws/user-dashboard/index.php'),
+        target: "http://localhost",
+        changeOrigin: true,
+        rewrite: (path) => path.replace('/api/user-dashboard', '/FinHub/backend/ws/user-dashboard/index.php'),
       },
       "/api/dashboard": {
         target: "http://localhost",

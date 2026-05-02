@@ -12,6 +12,7 @@ export default class BillsDAL {
   // ── Reminders ──
   static async getReminders(billId)  { return await api.get(`/reminders?bill_id=${billId}`); }
   static async addReminder(data)     { return await api.post("/reminders", data); }
+  static async updateReminder(id, data) { return await api.patch(`/reminders?id=${id}`, data); }
   static async removeReminder(id)    { return await api.delete(`/reminders?id=${id}`); }
 
   // ── Email ──

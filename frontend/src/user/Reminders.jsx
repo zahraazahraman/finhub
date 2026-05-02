@@ -32,6 +32,7 @@ export default function Reminders() {
   const [showAddBill, setShowAddBill]                   = useState(false);
   const [showEditBill, setShowEditBill]                 = useState(false);
   const [showAddReminder, setShowAddReminder]           = useState(false);
+  const [editReminderTarget, setEditReminderTarget]     = useState(null);
   const [deleteBillTarget, setDeleteBillTarget]         = useState(null);
   const [deleteReminderTarget, setDeleteReminderTarget] = useState(null);
 
@@ -39,10 +40,8 @@ export default function Reminders() {
   const [weeklyMessage, setWeeklyMessage] = useState(null);
 
   // ── Total reminder count (for limit display) ──
-  const totalReminderCount = reminders.length;
-  // More accurate: count across all bills in state, but we only load for selected bill.
-  // We track total by loading reminders lazily per bill. We use the per-user count from the backend
-  // indirectly via the limit message. For the UI display we use the loaded reminders array length.
+  // Use server-provided per-user total when available; fall back to loaded reminders length.
+  const [totalReminderCount, setTotalReminderCount] = useState(0);
 
   // ── On mount: load data + silently send due reminders ──
   useEffect(() => {
@@ -69,7 +68,11 @@ export default function Reminders() {
     const load = async () => {
       setRemindersLoading(true);
       const result = await BillsBLL.getReminders(selectedBill.bill_id);
-      if (result.success) setReminders(result.reminders);
+      if (result.success) {
+        setReminders(result.reminders);
+        // Use server total if provided, otherwise fall back to reminders length
+        setTotalReminderCount(result.total ?? result.reminders.length);
+      }
       setRemindersLoading(false);
     };
     load();
@@ -132,6 +135,7 @@ export default function Reminders() {
   const handleReminderAdded = (newReminder) => {
     setReminders(prev => [...prev, newReminder]);
     setShowAddReminder(false);
+    setTotalReminderCount((c) => c + 1);
   };
 
   const handleReminderDeleted = async () => {
@@ -140,6 +144,7 @@ export default function Reminders() {
     if (result.success) {
       setReminders(prev => prev.filter(r => r.reminder_id !== deleteReminderTarget.reminder_id));
       setDeleteReminderTarget(null);
+      setTotalReminderCount((c) => Math.max(0, c - 1));
     }
     setDeletingReminder(false);
   };
@@ -216,6 +221,7 @@ export default function Reminders() {
           onMarkUnpaid={handleMarkUnpaid}
           markingPaid={markingPaid}
           onAddReminder={() => setShowAddReminder(true)}
+          onEditReminder={(reminder) => { setEditReminderTarget(reminder); setShowAddReminder(true); }}
           onEditBill={() => setShowEditBill(true)}
           onDeleteReminder={setDeleteReminderTarget}
           onDeleteBill={setDeleteBillTarget}
@@ -242,13 +248,20 @@ export default function Reminders() {
         />
       )}
 
-      {showAddReminder && selectedBill && (
-        <AddReminderModal
-          bill={selectedBill}
-          onClose={() => setShowAddReminder(false)}
-          onAdded={handleReminderAdded}
-        />
-      )}
+          {showAddReminder && selectedBill && (
+            <AddReminderModal
+              bill={selectedBill}
+              onClose={() => { setShowAddReminder(false); setEditReminderTarget(null); }}
+              onAdded={handleReminderAdded}
+              initialReminder={editReminderTarget}
+              onUpdated={(updated) => {
+                // Replace the reminder in state
+                setReminders(prev => prev.map(r => r.reminder_id === updated.reminder_id ? updated : r));
+                setShowAddReminder(false);
+                setEditReminderTarget(null);
+              }}
+            />
+          )}
 
       {deleteBillTarget && (
         <Modal

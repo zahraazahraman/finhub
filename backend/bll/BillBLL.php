@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../dal/BillDAL.php';
 require_once __DIR__ . '/../dal/ReminderDAL.php';
+require_once __DIR__ . '/../dal/MyNotificationDAL.php';
 require_once __DIR__ . '/CategoryBLL.php';
 require_once __DIR__ . '/../Mailer.php';
 require_once __DIR__ . '/../EmailTemplates.php';
@@ -10,10 +11,12 @@ define('MAX_REMINDERS_PER_USER', 10);
 class BillBLL {
     private BillDAL $billDal;
     private ReminderDAL $reminderDal;
+    private MyNotificationDAL $notifDal;
 
     public function __construct() {
         $this->billDal     = new BillDAL();
         $this->reminderDal = new ReminderDAL();
+        $this->notifDal    = new MyNotificationDAL();
     }
 
     // ── Bills ──────────────────────────────────────────────────────
@@ -28,7 +31,6 @@ class BillBLL {
             $categoryBll->getAll(),
             fn($category) => ($category['type'] ?? '') === 'expense'
         ));
-
         return ['success' => true, 'categories' => $categories];
     }
 
@@ -106,7 +108,6 @@ class BillBLL {
 
         $this->billDal->markAsPaid($billId);
 
-        // ── Auto-create next bill for recurring ──
         $nextBill = null;
         if ($bill['recurrence_type'] !== 'none') {
             $nextDueDate = $this->computeNextDueDate($bill['due_date'], $bill['recurrence_type']);
@@ -158,7 +159,9 @@ class BillBLL {
             return ['success' => false, 'message' => 'Bill not found.'];
 
         $reminders = $this->reminderDal->getByBill($billId);
-        return ['success' => true, 'reminders' => $reminders];
+        // Also provide the total active reminders count for the user
+        $totalReminders = $this->reminderDal->countByUser($userId);
+        return ['success' => true, 'reminders' => $reminders, 'total_reminders' => $totalReminders];
     }
 
     public function addReminder(int $userId, int $billId, array $data): array {
@@ -213,6 +216,38 @@ class BillBLL {
         return ['success' => true];
     }
 
+    public function updateReminder(int $userId, int $reminderId, array $data): array {
+        if ($reminderId <= 0)
+            return ['success' => false, 'message' => 'Invalid reminder.'];
+
+        $reminder = $this->reminderDal->getById($reminderId);
+        if (!$reminder || (int)$reminder['user_id'] !== $userId)
+            return ['success' => false, 'message' => 'Reminder not found.'];
+
+        $bill = $this->billDal->getById((int)$reminder['bill_id']);
+        if (!$bill || (int)$bill['user_id'] !== $userId)
+            return ['success' => false, 'message' => 'Bill not found.'];
+        if ($bill['is_paid'])
+            return ['success' => false, 'message' => 'Cannot edit a reminder for a paid bill.'];
+
+        $daysBefore = (int)($data['days_before'] ?? 0);
+        if (!in_array($daysBefore, [1,3,7,14]))
+            return ['success' => false, 'message' => 'Invalid days before value. Choose 1, 3, 7, or 14.'];
+
+        $dueDate      = new DateTime($bill['due_date']);
+        $reminderDate = clone $dueDate;
+        $reminderDate->modify("-{$daysBefore} days");
+
+        if ($reminderDate <= new DateTime('today'))
+            return ['success' => false, 'message' => 'The reminder date would already be in the past. Choose fewer days or a later due date.'];
+
+        $updated = $this->reminderDal->update($reminderId, $daysBefore, $reminderDate->format('Y-m-d H:i:s'));
+        if (!$updated) return ['success' => false, 'message' => 'Failed to update reminder.'];
+
+        $fresh = $this->reminderDal->getById($reminderId);
+        return ['success' => true, 'reminder' => $fresh];
+    }
+
     // ── Email: Send due reminders (called on page load) ────────────
 
     public function sendDueReminders(int $userId, array $user): array {
@@ -226,8 +261,18 @@ class BillBLL {
 
             $status = $ok ? 'sent' : 'failed';
             $this->reminderDal->logEmail($userId, 'reminder', $status);
+
             if ($ok) {
                 $this->reminderDal->markAsSent((int)$reminder['reminder_id']);
+
+                // ── In-app notification: bill reminder ──
+                $this->notifDal->create(
+                    $userId,
+                    'bill',
+                    '🔔 Bill Reminder',
+                    $reminder['message']
+                );
+
                 $sent++;
             }
         }

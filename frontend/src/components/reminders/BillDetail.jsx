@@ -25,7 +25,7 @@ function getDueBadge(dueDate, isPaid) {
 export default function BillDetail({
   bill, reminders, remindersLoading, totalReminderCount,
   onBack, onMarkPaid, onMarkUnpaid, markingPaid,
-  onAddReminder, onEditBill, onDeleteReminder, onDeleteBill,
+  onAddReminder, onEditReminder, onEditBill, onDeleteReminder, onDeleteBill,
 }) {
   const isPaid = isBillPaid(bill.is_paid);
   const dueBadge = getDueBadge(bill.due_date, bill.is_paid);
@@ -168,16 +168,24 @@ export default function BillDetail({
                   <Badge variant={r.is_sent ? "success" : "warning"} size="sm">
                     {r.is_sent ? "Sent" : "Pending"}
                   </Badge>
-                  {!r.is_sent && (
-                    <button
-                      onClick={() => onDeleteReminder(r)}
-                      className="text-skin-text-muted hover:text-red-500 transition-colors p-1 rounded"
-                    >
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                    </button>
-                  )}
+                  <button
+                    onClick={() => onDeleteReminder(r)}
+                    className="text-skin-text-muted hover:text-red-500 transition-colors p-1 rounded"
+                    title="Delete reminder"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </button>
+                  <button
+                    onClick={() => onEditReminder(r)}
+                    className="text-skin-text-muted hover:text-emerald-500 transition-colors p-1 rounded"
+                    title="Edit reminder"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536M4 20l4-1 9-9a2.828 2.828 0 10-4-4l-9 9-1 4z" />
+                    </svg>
+                  </button>
                 </div>
               </div>
             ))}

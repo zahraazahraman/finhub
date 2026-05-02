@@ -71,7 +71,7 @@ export default class BillsBLL {
 
   static async getReminders(billId) {
     const { ok, data } = await BillsDAL.getReminders(billId);
-    if (ok && data.success) return { success: true, reminders: data.reminders };
+    if (ok && data.success) return { success: true, reminders: data.reminders, total: data.total_reminders ?? data.total };
     return { success: false, error: data.message || "Failed to load reminders." };
   }
 
@@ -84,6 +84,17 @@ export default class BillsBLL {
     const { ok, data } = await BillsDAL.addReminder(formData);
     if (ok && data.success) return { success: true, reminder: data.reminder };
     return { success: false, error: data.message || "Failed to add reminder." };
+  }
+
+  static async updateReminder(id, formData) {
+    const errors = {};
+    errors.days_before = validators.required(formData.days_before, "Days before");
+    Object.keys(errors).forEach(k => errors[k] === null && delete errors[k]);
+    if (Object.keys(errors).length > 0) return { success: false, validationErrors: errors };
+
+    const { ok, data } = await BillsDAL.updateReminder(id, formData);
+    if (ok && data.success) return { success: true, reminder: data.reminder };
+    return { success: false, error: data.message || "Failed to update reminder." };
   }
 
   static async removeReminder(id) {

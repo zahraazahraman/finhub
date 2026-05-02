@@ -64,6 +64,18 @@ class ReminderDAL {
         $stmt->execute([':bill_id' => $billId]);
     }
 
+    public function update(int $reminderId, int $daysBefore, string $reminderDate): bool {
+        $stmt = $this->db->prepare(
+            "UPDATE Reminders SET days_before = :days_before, reminder_date = :reminder_date WHERE reminder_id = :reminder_id"
+        );
+        $stmt->execute([
+            ':days_before'   => $daysBefore,
+            ':reminder_date' => $reminderDate,
+            ':reminder_id'   => $reminderId,
+        ]);
+        return $stmt->rowCount() > 0;
+    }
+
     public function getDueForUser(int $userId): array {
         $stmt = $this->db->prepare(
             "SELECT r.*, b.name AS bill_name, b.amount, b.due_date,

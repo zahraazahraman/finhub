@@ -27,6 +27,12 @@ switch ($method) {
         echo json_encode($bll->addReminder($userId, $billId, $data));
         break;
 
+    case 'PATCH':
+        // Update a reminder
+        $reminderId = (int)($_GET['id'] ?? ($data['reminder_id'] ?? 0));
+        echo json_encode($bll->updateReminder($userId, $reminderId, $data));
+        break;
+
     case 'DELETE':
         $reminderId = (int)($_GET['id'] ?? 0);
         echo json_encode($bll->deleteReminder($userId, $reminderId));

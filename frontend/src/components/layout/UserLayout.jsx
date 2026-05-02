@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { Outlet, NavLink, useNavigate } from "react-router-dom";
 import { useUser } from "../../context/UserContext.jsx";
+import { UserNotificationProvider, useUserNotifications } from "../../context/UserNotificationContext.jsx";
 import ThemeToggle from "../common/ThemeToggle.jsx";
+import UserNotificationBell from "../common/UserNotificationBell.jsx";
 import Modal from "../ui/Modal.jsx";
 
-const navItems = [
+const NAV_ITEMS = [
   {
     path: "/dashboard",
     label: "Dashboard",
@@ -80,10 +82,12 @@ const navItems = [
   },
 ];
 
-export default function UserLayout() {
+// Inner layout — has access to UserNotificationContext
+function UserLayoutInner() {
   const [collapsed, setCollapsed]             = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const { user, logout }                      = useUser();
+  const { unreadCount }                       = useUserNotifications();
   const navigate                              = useNavigate();
 
   const handleLogout = () => {
@@ -100,7 +104,8 @@ export default function UserLayout() {
         transition-all duration-300 ease-in-out flex-shrink-0 h-screen sticky top-0
         ${collapsed ? "w-16" : "w-60"}
       `}
-      style={{ boxShadow: 'var(--shadow-sm)' }}>
+      style={{ boxShadow: "var(--shadow-sm)" }}>
+
         {/* Logo */}
         <div className={`flex items-center gap-3 px-4 h-16 border-b border-skin-border flex-shrink-0 ${collapsed ? "justify-center" : ""}`}>
           <div className="relative w-8 h-8 flex-shrink-0">
@@ -122,12 +127,12 @@ export default function UserLayout() {
 
         {/* Nav */}
         <nav className="flex-1 py-4 px-2 space-y-1 overflow-y-auto">
-          {navItems.map((item) => (
+          {NAV_ITEMS.map((item) => (
             <NavLink
               key={item.path}
               to={item.path}
               className={({ isActive }) => `
-                flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium
+                relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium
                 transition-all duration-150
                 ${collapsed ? "justify-center" : ""}
                 ${isActive
@@ -136,8 +141,23 @@ export default function UserLayout() {
                 }
               `}
             >
-              {item.icon}
-              {!collapsed && <span>{item.label}</span>}
+              <span className="relative flex-shrink-0">
+                {item.icon}
+                {/* Unread dot on Notifications nav item */}
+                {item.path === "/notifications" && unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-2 h-2 bg-emerald-500 rounded-full" />
+                )}
+              </span>
+              {!collapsed && (
+                <span className="flex-1 flex items-center justify-between">
+                  {item.label}
+                  {item.path === "/notifications" && unreadCount > 0 && (
+                    <span className="ml-auto text-[10px] font-bold bg-emerald-500/20 text-emerald-500 rounded-full px-1.5 py-0.5">
+                      {unreadCount > 9 ? "9+" : unreadCount}
+                    </span>
+                  )}
+                </span>
+              )}
             </NavLink>
           ))}
         </nav>
@@ -181,9 +201,12 @@ export default function UserLayout() {
 
       {/* ── Main area ── */}
       <div className="flex-1 flex flex-col min-w-0">
+
         {/* Topbar */}
-        <header className="h-16 bg-skin-topbar border-b border-skin-border flex items-center px-6 gap-4 flex-shrink-0 backdrop-blur-sm"
-        style={{ boxShadow: 'var(--shadow-sm)' }}>
+        <header
+          className="h-16 bg-skin-topbar border-b border-skin-border flex items-center px-6 gap-4 flex-shrink-0 backdrop-blur-sm"
+          style={{ boxShadow: "var(--shadow-sm)" }}
+        >
           <button
             onClick={() => setCollapsed((v) => !v)}
             className="text-skin-text-secondary hover:text-skin-text transition-colors p-1.5 rounded-lg hover:bg-skin-hover"
@@ -194,13 +217,16 @@ export default function UserLayout() {
               <line x1="3" y1="18" x2="21" y2="18" />
             </svg>
           </button>
+
           <div className="flex-1">
             <h1 className="text-skin-text font-semibold text-sm capitalize">
               {location.pathname.split("/").pop() || "dashboard"}
             </h1>
           </div>
+
           <div className="flex items-center gap-3">
             <ThemeToggle />
+            <UserNotificationBell />
             <span className="text-skin-text-secondary text-sm hidden md:block">
               {user?.first_name} {user?.last_name}
             </span>
@@ -231,5 +257,14 @@ export default function UserLayout() {
         />
       )}
     </div>
+  );
+}
+
+// Outer wrapper provides the context
+export default function UserLayout() {
+  return (
+    <UserNotificationProvider>
+      <UserLayoutInner />
+    </UserNotificationProvider>
   );
 }

@@ -6,8 +6,8 @@ import BillsBLL from "../../bll/BillsBLL.js";
 import { formatDate } from "../../utils/formatters.js";
 import { BILL_REMINDER_DAYS_OPTIONS } from "../../utils/constants.js";
 
-export default function AddReminderModal({ bill, onClose, onAdded }) {
-  const [daysBefore, setDaysBefore] = useState("");
+export default function AddReminderModal({ bill, onClose, onAdded, initialReminder, onUpdated }) {
+  const [daysBefore, setDaysBefore] = useState(initialReminder ? String(initialReminder.days_before) : "");
   const [error, setError]           = useState("");
   const [apiError, setApiError]     = useState("");
   const [saving, setSaving]         = useState(false);
@@ -28,23 +28,35 @@ export default function AddReminderModal({ bill, onClose, onAdded }) {
   const handleSubmit = async () => {
     if (!daysBefore) { setError("Please select a reminder time."); return; }
     setSaving(true);
-    const result = await BillsBLL.addReminder({ bill_id: bill.bill_id, days_before: parseInt(daysBefore) });
-    if (!result.success) {
-      setApiError(result.error);
-      setSaving(false);
-      return;
+    if (initialReminder) {
+      // Edit mode
+      const result = await BillsBLL.updateReminder(initialReminder.reminder_id, { days_before: parseInt(daysBefore) });
+      if (!result.success) {
+        setApiError(result.error);
+        setSaving(false);
+        return;
+      }
+      if (onUpdated) onUpdated(result.reminder);
+    } else {
+      // Create mode
+      const result = await BillsBLL.addReminder({ bill_id: bill.bill_id, days_before: parseInt(daysBefore) });
+      if (!result.success) {
+        setApiError(result.error);
+        setSaving(false);
+        return;
+      }
+      if (onAdded) onAdded(result.reminder);
     }
-    onAdded(result.reminder);
   };
 
   return (
     <Modal
-      title="Add Email Reminder"
-      description={`Set an email reminder for "${bill.name}" (due ${formatDate(bill.due_date)}).`}
+      title={initialReminder ? "Edit Email Reminder" : "Add Email Reminder"}
+      description={initialReminder ? `Edit reminder for "${bill.name}" (due ${formatDate(bill.due_date)}).` : `Set an email reminder for "${bill.name}" (due ${formatDate(bill.due_date)}).`}
       onClose={onClose}
       size="sm"
     >
-      <div className="px-6 pb-2 space-y-4">
+      <div className="pb-2 space-y-4">
         <div>
           <label className="block text-sm font-medium text-skin-text-secondary mb-1.5">
             Remind me
@@ -79,9 +91,9 @@ export default function AddReminderModal({ bill, onClose, onAdded }) {
         )}
       </div>
 
-      <div className="px-6 pb-6 flex gap-3">
+      <div className="pb-6 flex gap-3">
         <Button variant="secondary" className="flex-1" onClick={onClose}>Cancel</Button>
-        <Button variant="primary" className="flex-1" loading={saving} onClick={handleSubmit}>Set Reminder</Button>
+        <Button variant="primary" className="flex-1" loading={saving} onClick={handleSubmit}>{initialReminder ? "Update Reminder" : "Set Reminder"}</Button>
       </div>
     </Modal>
   );
