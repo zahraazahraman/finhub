@@ -3,7 +3,7 @@ import Button from "../ui/Button.jsx";
 
 export default function WeeklySummaryCard({ onSend, sending, message }) {
   return (
-    <Card padding="md" className="mt-6">
+    <Card padding="md" className="mt-6 mb-6">
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-start gap-3">
           <div className="w-9 h-9 rounded-full bg-skin-brand-subtle flex items-center justify-center shrink-0 mt-0.5">

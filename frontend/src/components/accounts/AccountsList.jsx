@@ -1,7 +1,7 @@
 import Button from "../ui/Button.jsx";
 import AccountCard from "./AccountCard.jsx";
 
-export default function AccountsList({ accounts, onSelectAccount, onAddAccount, onDeleteAccount }) {
+export default function AccountsList({ accounts, hasFilters = false, onSelectAccount, onAddAccount, onDeleteAccount }) {
   return (
     <div>
       {/* ── Empty state ── */}
@@ -13,11 +13,22 @@ export default function AccountsList({ accounts, onSelectAccount, onAddAccount, 
               <path d="M2 10h20" />
             </svg>
           </div>
-          <h3 className="text-skin-text font-semibold text-lg mb-1">No accounts yet</h3>
-          <p className="text-skin-text-muted text-sm mb-6">
-            Create your first account to start tracking your finances.
-          </p>
-          <Button variant="primary" onClick={onAddAccount}>Create Account</Button>
+          {hasFilters ? (
+            <>
+              <h3 className="text-skin-text font-semibold text-lg mb-1">No matching accounts</h3>
+              <p className="text-skin-text-muted text-sm">
+                Try changing your search, account type, or balance state filters.
+              </p>
+            </>
+          ) : (
+            <>
+              <h3 className="text-skin-text font-semibold text-lg mb-1">No accounts yet</h3>
+              <p className="text-skin-text-muted text-sm mb-6">
+                Create your first account to start tracking your finances.
+              </p>
+              <Button variant="primary" onClick={onAddAccount}>Create Account</Button>
+            </>
+          )}
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">

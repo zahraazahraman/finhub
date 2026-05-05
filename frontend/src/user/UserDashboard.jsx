@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useUser } from "../context/UserContext.jsx";
 import UserDashboardBLL from "../bll/UserDashboardBLL.js";
 import CurrenciesBLL from "../bll/CurrenciesBLL.js";
 import DashboardStatCard           from "../components/dashboard/DashboardStatCard.jsx";
@@ -14,9 +15,11 @@ import { formatCurrency }          from "../utils/formatters.js";
 const today        = new Date();
 const DEFAULT_FROM = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-01`;
 const DEFAULT_TO   = new Date(today.getFullYear(), today.getMonth() + 1, 0).toISOString().split("T")[0];
-const DEFAULT_CURRENCY = "USD";
+const FALLBACK_CURRENCY = "USD";
 
 export default function UserDashboard() {
+    const { user } = useUser();
+
     // ── Filter state ──
     const [from, setFrom] = useState(DEFAULT_FROM);
     const [to,   setTo]   = useState(DEFAULT_TO);
@@ -27,7 +30,7 @@ export default function UserDashboard() {
 
     // ── Currency state ──
     const [currencies,       setCurrencies]       = useState([]);
-    const [selectedCurrency, setSelectedCurrency] = useState(DEFAULT_CURRENCY);
+    const [selectedCurrency, setSelectedCurrency] = useState(FALLBACK_CURRENCY);
 
     // ── Data state ──
     const [data,    setData]    = useState(null);
@@ -51,23 +54,45 @@ export default function UserDashboard() {
     };
 
     // ── Initial load ──
+    // Currencies are loaded first so we can resolve the user's preferred
+    // currency code from their preferred_currency_id before the first fetch.
     useEffect(() => {
         const load = async () => {
             const currResult = await CurrenciesBLL.getAll();
-            if (currResult.success) setCurrencies(currResult.currencies);
+
+            // Determine the starting currency: prefer the user's saved preference,
+            // fall back to USD if the preference isn't found in the list.
+            let initialCurrency = FALLBACK_CURRENCY;
+            if (currResult.success && Array.isArray(currResult.currencies)) {
+                setCurrencies(currResult.currencies);
+
+                if (user?.preferred_currency_id) {
+                    const preferred = currResult.currencies.find(
+                        (c) => Number(c.currency_id) === Number(user.preferred_currency_id)
+                    );
+                    if (preferred) {
+                        initialCurrency = preferred.code.toUpperCase();
+                    }
+                }
+            }
+
+            // Set state so the dropdown reflects the preference immediately.
+            // The selectedCurrency watcher below won't fire a second fetch here
+            // because data is still null at this point (guarded by `if (!data) return`).
+            setSelectedCurrency(initialCurrency);
 
             fetchData({
                 from,
                 to,
-                target_currency: DEFAULT_CURRENCY,
+                target_currency: initialCurrency,
             });
         };
         load();
     }, []);
 
-    // ── Re-fetch when selected currency changes ──
+    // ── Re-fetch when selected currency changes (user switches the dropdown) ──
     useEffect(() => {
-        if (!data) return; // skip on initial mount — already handled above
+        if (!data) return; // skip on initial mount — handled above
         fetchData({
             from,
             to,
@@ -248,9 +273,13 @@ export default function UserDashboard() {
 
                     {/* ── Charts ── */}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                        <DashboardBarChart data={data.monthly_totals} />
+                        <DashboardBarChart
+                            data={data.monthly_totals}
+                            currencySymbol={currencySymbol}
+                        />
                         <DashboardDonutChart
                             data={data.category_totals}
+                            currencySymbol={currencySymbol}
                         />
                     </div>
 

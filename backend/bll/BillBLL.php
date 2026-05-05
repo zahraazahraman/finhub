@@ -3,8 +3,8 @@ require_once __DIR__ . '/../dal/BillDAL.php';
 require_once __DIR__ . '/../dal/ReminderDAL.php';
 require_once __DIR__ . '/../dal/MyNotificationDAL.php';
 require_once __DIR__ . '/CategoryBLL.php';
-require_once __DIR__ . '/../Mailer.php';
-require_once __DIR__ . '/../EmailTemplates.php';
+require_once __DIR__ . '/../services/Mailer.php';
+require_once __DIR__ . '/../services/EmailTemplates.php';
 
 define('MAX_REMINDERS_PER_USER', 10);
 
@@ -186,11 +186,8 @@ class BillBLL {
         if ($reminderDate <= new DateTime('today'))
             return ['success' => false, 'message' => 'The reminder date would already be in the past. Choose fewer days or a later due date.'];
 
-        $dayWord = $daysBefore === 1 ? 'day' : 'days';
-        $message = "Your bill \"{$bill['name']}\" of {$bill['currency_symbol']}"
-                 . number_format((float)$bill['amount'], 2)
-                 . " is due in {$daysBefore} {$dayWord} on "
-                 . date('F j, Y', strtotime($bill['due_date'])) . ".";
+        // Create a generic message (will be calculated dynamically at send time)
+        $message = "Bill reminder for {$bill['name']}";
 
         $reminderId = $this->reminderDal->create(
             $userId,
@@ -255,6 +252,17 @@ class BillBLL {
         $sent = 0;
 
         foreach ($due as $reminder) {
+            // Calculate the actual days remaining from today to due date
+            $today = new DateTime('today');
+            $dueDate = new DateTime($reminder['due_date']);
+            $daysRemaining = $dueDate->diff($today)->days;
+            $dayWord = $daysRemaining === 1 ? 'day' : 'days';
+            
+            $dynamicMessage = "Your bill \"{$reminder['bill_name']}\" of {$reminder['currency_symbol']}"
+                            . number_format((float)$reminder['amount'], 2)
+                            . " is due in {$daysRemaining} {$dayWord} on "
+                            . date('F j, Y', strtotime($reminder['due_date'])) . ".";
+            
             $html    = EmailTemplates::reminder($reminder);
             $subject = "Bill Reminder: {$reminder['bill_name']}";
             $ok      = Mailer::send($user['email'], $user['first_name'] . ' ' . $user['last_name'], $subject, $html);
@@ -270,7 +278,7 @@ class BillBLL {
                     $userId,
                     'bill',
                     '🔔 Bill Reminder',
-                    $reminder['message']
+                    $dynamicMessage
                 );
 
                 $sent++;

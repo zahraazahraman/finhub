@@ -34,7 +34,7 @@ class RegisterBLL {
       return { success: false, validationErrors };
     try {
       const { ok, data } = await RegisterDAL.registerRequest(payload);
-      if (ok && data.success) return { success: true, user: data.user };
+      if (ok && data.success) return { success: true, email: data.email };
       return { success: false, serverError: data.message || "Registration failed." };
     } catch {
       return { success: false, serverError: "Network error. Please try again." };
@@ -61,7 +61,8 @@ export default function RegisterPage() {
     setLoading(true);
     const result = await RegisterBLL.register(form);
     if (result.success) {
-      navigate("/login?registered=true");
+      // Redirect to email verification — pass the email so the page knows where to send the OTP
+      navigate(`/verify-email?email=${encodeURIComponent(result.email)}`);
     } else if (result.validationErrors) {
       setFieldErrors(result.validationErrors);
     } else {

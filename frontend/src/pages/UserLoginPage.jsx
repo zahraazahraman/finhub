@@ -35,7 +35,11 @@ class UserAuthBLL {
       return { success: false, validationErrors };
     try {
       const { ok, data } = await UserAuthDAL.loginRequest(email, password);
-      if (ok && data.success) return { success: true, user: data.user };
+      if (ok && data.success)
+        return { success: true, user: data.user };
+      // Unverified account — backend returns needs_verification + email
+      if (!ok && data.needs_verification)
+        return { success: false, needsVerification: true, email: data.email, serverError: data.message };
       return { success: false, serverError: data.message || "Invalid credentials." };
     } catch {
       return { success: false, serverError: "Network error. Please try again." };
@@ -107,7 +111,6 @@ function InputField({ id, label, type = "text", value, onChange, error, placehol
   );
 }
 
-// ── Main Content ──
 export default function UserLoginPage() {
   const navigate  = useNavigate();
   const location  = useLocation();
@@ -125,15 +128,22 @@ export default function UserLoginPage() {
     setServerError("");
     setFieldErrors({});
     setLoading(true);
+
     const result = await UserAuthBLL.login(email, password);
+
     if (result.success) {
       login(result.user);
       navigate("/dashboard");
+    } else if (result.needsVerification) {
+      // Credentials were correct but email isn't verified.
+      // Backend already sent a fresh OTP — send user straight to the verify page.
+      navigate(`/verify-email?email=${encodeURIComponent(result.email)}`);
     } else if (result.validationErrors) {
       setFieldErrors(result.validationErrors);
     } else {
       setServerError(result.serverError);
     }
+
     setLoading(false);
   };
 
@@ -165,7 +175,6 @@ export default function UserLoginPage() {
           </div>
         </div>
 
-        {/* Content */}
         <div className="relative z-10">
           <h1 className="text-4xl font-bold text-skin-text leading-tight mb-4">
             See where your money goes.
@@ -191,74 +200,74 @@ export default function UserLoginPage() {
             <span className="text-emerald-500 text-xl font-bold">Hub</span>
           </div>
 
-<Card className="shadow-sm">
-              <h2 className="text-xl font-semibold text-skin-text mb-1">Welcome back</h2>
-              <p className="text-skin-text-muted text-sm mb-8">
-                Don't have an account?{" "}
-                <Link to="/register" className="text-emerald-500 hover:text-emerald-400 transition-colors duration-150">
-                  Create one for free
-                </Link>
-              </p>
+          <Card className="shadow-sm">
+            <h2 className="text-xl font-semibold text-skin-text mb-1">Welcome back</h2>
+            <p className="text-skin-text-muted text-sm mb-8">
+              Don't have an account?{" "}
+              <Link to="/register" className="text-emerald-500 hover:text-emerald-400 transition-colors duration-150">
+                Create one for free
+              </Link>
+            </p>
 
-              {justRegistered && (
-                <div className="mb-5 flex items-start gap-3 bg-emerald-500/10 border border-emerald-500/30 text-emerald-500 text-sm rounded-xl px-4 py-3">
-                  <svg className="w-4 h-4 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                  Account created successfully! Please sign in.
-                </div>
-              )}
+            {justRegistered && (
+              <div className="mb-5 flex items-start gap-3 bg-emerald-500/10 border border-emerald-500/30 text-emerald-500 text-sm rounded-xl px-4 py-3">
+                <svg className="w-4 h-4 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+                Account created successfully! Please sign in.
+              </div>
+            )}
 
-              {serverError && (
-                <div className="mb-5 flex items-start gap-3 bg-red-500/10 border border-red-500/30 text-red-500 text-sm rounded-xl px-4 py-3">
-                  <svg className="w-4 h-4 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                  </svg>
-                  {serverError}
-                </div>
-              )}
+            {serverError && (
+              <div className="mb-5 flex items-start gap-3 bg-red-500/10 border border-red-500/30 text-red-500 text-sm rounded-xl px-4 py-3">
+                <svg className="w-4 h-4 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
+                {serverError}
+              </div>
+            )}
 
-              <form onSubmit={handleSubmit} noValidate>
-                <Input
-                  id="email"
-                  name="email"
-                  label="Email Address"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  error={fieldErrors.email}
-                  placeholder="zahraa@example.com"
-                  icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>}
-                />
-                <Input
-                  id="password"
-                  name="password"
-                  label="Password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  error={fieldErrors.password}
-                  placeholder="••••••••"
-                  icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>}
-                />
+            <form onSubmit={handleSubmit} noValidate>
+              <Input
+                id="email"
+                name="email"
+                label="Email Address"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                error={fieldErrors.email}
+                placeholder="zahraa@example.com"
+                icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>}
+              />
+              <Input
+                id="password"
+                name="password"
+                label="Password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                error={fieldErrors.password}
+                placeholder="••••••••"
+                icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>}
+              />
 
-                <div className="flex items-center justify-end mb-7">
-                  <button type="button" className="text-sm text-emerald-500 hover:text-emerald-400 transition-colors duration-150">
-                    Forgot password?
-                  </button>
-                </div>
+              <div className="flex items-center justify-end mb-7">
+                <button type="button" className="text-sm text-emerald-500 hover:text-emerald-400 transition-colors duration-150">
+                  Forgot password?
+                </button>
+              </div>
 
-                <Button
-                  type="submit"
-                  loading={loading}
-                  disabled={loading}
-                  className="w-full"
-                  icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7" /></svg>}
-                >
-                  {loading ? "Signing in…" : "Sign In"}
-                </Button>
-              </form>
-            </Card>
+              <Button
+                type="submit"
+                loading={loading}
+                disabled={loading}
+                className="w-full"
+                icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7" /></svg>}
+              >
+                {loading ? "Signing in…" : "Sign In"}
+              </Button>
+            </form>
+          </Card>
 
           <p className="text-center text-skin-text-muted text-xs mt-6">
             ©️ {new Date().getFullYear()} FinHub. All rights reserved.

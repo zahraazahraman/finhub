@@ -3,8 +3,9 @@ import {
     Tooltip, Legend, ResponsiveContainer,
 } from "recharts";
 import Card from "../ui/Card.jsx";
+import { formatCurrency } from "../../utils/formatters.js";
 
-const CustomTooltip = ({ active, payload, label }) => {
+const CustomTooltip = ({ active, payload, label, currencySymbol }) => {
     if (!active || !payload?.length) return null;
     return (
         <div className="border border-skin-border rounded-2xl px-4 py-3 text-sm"
@@ -16,10 +17,7 @@ const CustomTooltip = ({ active, payload, label }) => {
                           style={{ backgroundColor: entry.color }} />
                     <span className="text-skin-text-secondary capitalize">{entry.name}:</span>
                     <span className="text-skin-text font-medium">
-                        {Number(entry.value).toLocaleString("en-US", {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2,
-                        })}
+                        {formatCurrency(entry.value, currencySymbol)}
                     </span>
                 </div>
             ))}
@@ -27,7 +25,7 @@ const CustomTooltip = ({ active, payload, label }) => {
     );
 };
 
-export default function DashboardBarChart({ data = [] }) {
+export default function DashboardBarChart({ data = [], currencySymbol = "$" }) {
     // Format "2026-03" → "Mar 26" for the axis
     const formatted = data.map((row) => {
         const [year, month] = row.month.split("-");
@@ -74,8 +72,9 @@ export default function DashboardBarChart({ data = [] }) {
                             axisLine={false}
                             tickLine={false}
                             allowDecimals={false}
+                            tickFormatter={(value) => formatCurrency(value, currencySymbol)}
                         />
-                        <Tooltip content={<CustomTooltip />} cursor={{ fill: "var(--bg-hover)", radius: 6 }} />
+                        <Tooltip content={<CustomTooltip currencySymbol={currencySymbol} />} cursor={{ fill: "var(--bg-hover)", radius: 6 }} />
                         <Legend
                             wrapperStyle={{ fontSize: 12, color: "var(--text-secondary)", paddingTop: 16 }}
                             formatter={(value) => value.charAt(0).toUpperCase() + value.slice(1)}

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import AccountsBLL from "../bll/AccountsBLL.js";
 import TransactionsBLL from "../bll/TransactionsBLL.js";
 import CurrenciesBLL from "../bll/CurrenciesBLL.js";
@@ -7,6 +7,7 @@ import Spinner from "../components/ui/Spinner.jsx";
 import Button from "../components/ui/Button.jsx";
 import AccountsList from "../components/accounts/AccountsList.jsx";
 import AccountDetail from "../components/accounts/AccountDetail.jsx";
+import AccountFilters from "../components/accounts/AccountFilters.jsx";
 import AddAccountModal from "../components/accounts/AddAccountModal.jsx";
 import AddTransactionModal from "../components/accounts/AddTransactionModal.jsx";
 import ImportTransactionsModal from "../components/accounts/ImportTransactionsModal.jsx";
@@ -20,6 +21,9 @@ export default function Accounts() {
 
   // ── View ──
   const [selectedAccount, setSelectedAccount] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [typeFilter, setTypeFilter] = useState("all");
+  const [balanceStateFilter, setBalanceStateFilter] = useState("all");
 
   // ── Loading ──
   const [pageLoading, setPageLoading] = useState(true);
@@ -141,6 +145,38 @@ export default function Accounts() {
     setDeletingTx(false);
   };
 
+  const filteredAccounts = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+
+    return accounts.filter((account) => {
+      const name = (account.account_name || "").toLowerCase();
+      const code = (account.currency_code || "").toLowerCase();
+      const matchesSearch = !q || name.includes(q) || code.includes(q);
+      if (!matchesSearch) return false;
+
+      const matchesType = typeFilter === "all" || account.account_type === typeFilter;
+      if (!matchesType) return false;
+
+      if (balanceStateFilter === "all") return true;
+      const balance = parseFloat(account.balance || 0);
+      if (balanceStateFilter === "positive") return balance > 0;
+      if (balanceStateFilter === "zero") return balance === 0;
+      if (balanceStateFilter === "negative") return balance < 0;
+      return true;
+    });
+  }, [accounts, searchQuery, typeFilter, balanceStateFilter]);
+
+  const hasActiveFilters =
+    Boolean(searchQuery.trim()) ||
+    typeFilter !== "all" ||
+    balanceStateFilter !== "all";
+
+  const handleResetFilters = () => {
+    setSearchQuery("");
+    setTypeFilter("all");
+    setBalanceStateFilter("all");
+  };
+
   if (pageLoading) return (
     <div className="flex items-center justify-center h-64 animate-fade-in" >
       <Spinner size="lg" />
@@ -172,10 +208,26 @@ export default function Accounts() {
         </Button>
       </div>
 
+      {!selectedAccount && (
+        <AccountFilters
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          typeFilter={typeFilter}
+          onTypeFilterChange={setTypeFilter}
+          balanceStateFilter={balanceStateFilter}
+          onBalanceStateFilterChange={setBalanceStateFilter}
+          onReset={handleResetFilters}
+          hasActiveFilters={hasActiveFilters}
+          visibleCount={filteredAccounts.length}
+          totalCount={accounts.length}
+        />
+      )}
+
       {/* ── View ── */}
       {!selectedAccount ? (
         <AccountsList
-          accounts={accounts}
+          accounts={filteredAccounts}
+          hasFilters={hasActiveFilters}
           onSelectAccount={setSelectedAccount}
           onAddAccount={() => setShowAddAccount(true)}
           onDeleteAccount={setDeleteAccountTarget}

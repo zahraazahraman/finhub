@@ -25,6 +25,16 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: () => '/FinHub/backend/ws/auth/logout.php',
       },
+      "/api/auth/verify-email": {
+        target: "http://localhost",
+        changeOrigin: true,
+        rewrite: () => '/FinHub/backend/ws/auth/verify-email.php',
+      },
+      "/api/profile": {
+        target: "http://localhost",
+        changeOrigin: true,
+        rewrite: (path) => path.replace('/api/profile', '/FinHub/backend/ws/profile/index.php'),
+      },
       "/api/users": {
         target: "http://localhost",
         changeOrigin: true,

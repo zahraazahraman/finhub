@@ -47,8 +47,13 @@ class ChatBLL {
         // Fetch the full history (includes the message we just saved)
         $history = $this->dal->getMessages($sessionId);
 
-        // Build Groq messages array with financial context as system prompt
-        $groqMessages = $this->buildGroqMessages($userId, $history);
+        // Read user preferences from session — both have safe fallbacks for
+        // sessions created before the migration ran.
+        $shareData = (int)($_SESSION['user']['ai_data_sharing'] ?? 1);
+        $aiTone    = $_SESSION['user']['ai_tone'] ?? 'professional';
+
+        // Build Groq messages array with (conditional) financial context as system prompt
+        $groqMessages = $this->buildGroqMessages($userId, $history, $shareData, $aiTone);
 
         // Call Groq
         $aiText = $this->callGroq($groqMessages);
@@ -85,16 +90,13 @@ class ChatBLL {
     }
 
     // ── Build Groq messages array ──
-    // System prompt carries the user's financial snapshot.
-    // History is appended in chronological order.
-    private function buildGroqMessages(int $userId, array $history): array {
-        $context      = $this->dal->getUserFinancialContext($userId);
-        $systemPrompt = $this->buildSystemPrompt($context);
+    // Passes shareData and aiTone down to the system prompt builder.
+    private function buildGroqMessages(int $userId, array $history, int $shareData, string $aiTone): array {
+        $systemPrompt = $this->buildSystemPrompt($userId, $shareData, $aiTone);
 
         $messages = [['role' => 'system', 'content' => $systemPrompt]];
 
         foreach ($history as $msg) {
-            // Map DB sender_type → Groq role
             $role       = ($msg['sender_type'] === 'ai') ? 'assistant' : 'user';
             $messages[] = ['role' => $role, 'content' => $msg['message_text']];
         }
@@ -102,78 +104,98 @@ class ChatBLL {
         return $messages;
     }
 
-    // ── Build system prompt with live financial context ──
-    private function buildSystemPrompt(array $context): string {
+    // ── Build system prompt ──
+    // If $shareData === 1, fetch and inject the user's live financial snapshot.
+    // If $shareData === 0, provide a general advisor role with no personal data.
+    // $aiTone controls the language style appended to the guidelines.
+    private function buildSystemPrompt(int $userId, int $shareData, string $aiTone): string {
         $lines = [];
 
         $lines[] = "You are FinHub's AI Financial Consultant — a knowledgeable, friendly, and practical financial advisor.";
-        $lines[] = "You have access to this user's live financial data directly from their FinHub account.";
-        $lines[] = "Use it to provide personalized, specific, and actionable advice.\n";
-        $lines[] = "=== USER'S FINANCIAL SNAPSHOT ===\n";
 
-        // Accounts
-        if (!empty($context['accounts'])) {
-            $lines[] = "Accounts:";
-            foreach ($context['accounts'] as $acc) {
-                $balance = number_format((float)$acc['balance'], 2);
-                $lines[] = "  - {$acc['account_name']}: {$acc['currency_symbol']}{$balance} {$acc['currency_code']}";
+        if ($shareData === 1) {
+            $context = $this->dal->getUserFinancialContext($userId);
+
+            $lines[] = "You have access to this user's live financial data directly from their FinHub account.";
+            $lines[] = "Use it to provide personalized, specific, and actionable advice.\n";
+            $lines[] = "=== USER'S FINANCIAL SNAPSHOT ===\n";
+
+            // Accounts
+            if (!empty($context['accounts'])) {
+                $lines[] = "Accounts:";
+                foreach ($context['accounts'] as $acc) {
+                    $balance = number_format((float)$acc['balance'], 2);
+                    $lines[] = "  - {$acc['account_name']}: {$acc['currency_symbol']}{$balance} {$acc['currency_code']}";
+                }
+                $currencies = array_unique(array_column($context['accounts'], 'currency_code'));
+                if (count($currencies) > 1) {
+                    $lines[] = "  (User has accounts in multiple currencies: " . implode(', ', $currencies) . ")";
+                }
+            } else {
+                $lines[] = "Accounts: None created yet.";
             }
-            // Note mixed currencies if applicable
-            $currencies = array_unique(array_column($context['accounts'], 'currency_code'));
-            if (count($currencies) > 1) {
-                $lines[] = "  (User has accounts in multiple currencies: " . implode(', ', $currencies) . ")";
+
+            // Monthly summary
+            $monthly = $context['monthly'];
+            $lines[] = "\nThis month's activity:";
+            $lines[] = "  - Income:   " . number_format((float)$monthly['month_income'], 2);
+            $lines[] = "  - Expenses: " . number_format((float)$monthly['month_expenses'], 2);
+            $net     = (float)$monthly['month_income'] - (float)$monthly['month_expenses'];
+            $sign    = $net >= 0 ? '+' : '';
+            $lines[] = "  - Net:      {$sign}" . number_format($net, 2);
+
+            // Goals
+            if (!empty($context['goals'])) {
+                $lines[] = "\nFinancial Goals:";
+                foreach ($context['goals'] as $g) {
+                    $pct     = (float)$g['target_amount'] > 0
+                        ? round(((float)$g['current_amount'] / (float)$g['target_amount']) * 100, 1)
+                        : 0;
+                    $type    = ucfirst(str_replace('_', ' ', $g['goal_type']));
+                    $current = number_format((float)$g['current_amount'], 2);
+                    $target  = number_format((float)$g['target_amount'], 2);
+                    $lines[] = "  - {$g['goal_name']} ({$type}): {$current} / {$target} {$g['currency_code']} ({$pct}% complete)";
+                }
+            } else {
+                $lines[] = "\nFinancial Goals: None yet.";
             }
+
+            // Investments
+            if (!empty($context['investments'])) {
+                $lines[] = "\nInvestments:";
+                foreach ($context['investments'] as $inv) {
+                    $type    = ucfirst(str_replace('_', ' ', $inv['investment_type']));
+                    $cur     = ($inv['current_price'] !== null && (float)$inv['current_price'] > 0)
+                        ? (float)$inv['current_price']
+                        : (float)$inv['purchase_price'];
+                    $pnl     = round(($cur - (float)$inv['purchase_price']) * (float)$inv['quantity'], 2);
+                    $pnlSign = $pnl >= 0 ? '+' : '';
+                    $lines[] = "  - {$inv['investment_name']} ({$type}): qty {$inv['quantity']} @ buy {$inv['purchase_price']} {$inv['currency_code']}, now {$cur} {$inv['currency_code']}, P/L: {$pnlSign}{$pnl}";
+                }
+            } else {
+                $lines[] = "\nInvestments: None yet.";
+            }
+
         } else {
-            $lines[] = "Accounts: None created yet.";
-        }
-
-        // Monthly summary
-        $monthly = $context['monthly'];
-        $lines[] = "\nThis month's activity:";
-        $lines[] = "  - Income:   " . number_format((float)$monthly['month_income'], 2);
-        $lines[] = "  - Expenses: " . number_format((float)$monthly['month_expenses'], 2);
-        $net      = (float)$monthly['month_income'] - (float)$monthly['month_expenses'];
-        $sign     = $net >= 0 ? '+' : '';
-        $lines[]  = "  - Net:      {$sign}" . number_format($net, 2);
-
-        // Goals
-        if (!empty($context['goals'])) {
-            $lines[] = "\nFinancial Goals:";
-            foreach ($context['goals'] as $g) {
-                $pct     = (float)$g['target_amount'] > 0
-                    ? round(((float)$g['current_amount'] / (float)$g['target_amount']) * 100, 1)
-                    : 0;
-                $type    = ucfirst(str_replace('_', ' ', $g['goal_type']));
-                $current = number_format((float)$g['current_amount'], 2);
-                $target  = number_format((float)$g['target_amount'], 2);
-                $lines[] = "  - {$g['goal_name']} ({$type}): {$current} / {$target} {$g['currency_code']} ({$pct}% complete)";
-            }
-        } else {
-            $lines[] = "\nFinancial Goals: None yet.";
-        }
-
-        // Investments
-        if (!empty($context['investments'])) {
-            $lines[] = "\nInvestments:";
-            foreach ($context['investments'] as $inv) {
-                $type    = ucfirst(str_replace('_', ' ', $inv['investment_type']));
-                $cur     = ($inv['current_price'] !== null && (float)$inv['current_price'] > 0)
-                    ? (float)$inv['current_price']
-                    : (float)$inv['purchase_price'];
-                $pnl     = round(($cur - (float)$inv['purchase_price']) * (float)$inv['quantity'], 2);
-                $pnlSign = $pnl >= 0 ? '+' : '';
-                $lines[] = "  - {$inv['investment_name']} ({$type}): qty {$inv['quantity']} @ buy {$inv['purchase_price']} {$inv['currency_code']}, now {$cur} {$inv['currency_code']}, P/L: {$pnlSign}{$pnl}";
-            }
-        } else {
-            $lines[] = "\nInvestments: None yet.";
+            // User opted out of data sharing — advise generally, never reference personal numbers.
+            $lines[] = "The user has chosen not to share their personal financial data with you.";
+            $lines[] = "Provide thoughtful, general financial guidance without referencing any personal figures.";
+            $lines[] = "You may ask the user to share details themselves in the conversation if it would help.";
         }
 
         $lines[] = "\n=== GUIDELINES ===";
-        $lines[] = "- Give personalized advice grounded in the data above.";
-        $lines[] = "- Be concise, clear, and professional. Keep responses focused.";
+        $lines[] = "- Be concise, clear, and focused.";
         $lines[] = "- Never guarantee returns or make definitive market predictions.";
         $lines[] = "- If the user asks about topics unrelated to personal finance, politely redirect.";
         $lines[] = "- Respond in the same language the user writes in.";
+
+        // Tone modifier — appended last so it overrides any style implied above.
+        if ($aiTone === 'simple') {
+            $lines[] = "- IMPORTANT — LANGUAGE STYLE: This user is a complete beginner in personal finance.";
+            $lines[] = "  Write every response in simple, everyday language — as if explaining to a friend with no financial background.";
+            $lines[] = "  Avoid all financial jargon. If you must use a financial term (e.g. ROI, diversification, portfolio, asset), explain it immediately in plain words in parentheses.";
+            $lines[] = "  Use short sentences. Be warm, patient, and encouraging. Never make the user feel overwhelmed.";
+        }
 
         return implode("\n", $lines);
     }

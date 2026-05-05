@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import GoalsBLL from "../bll/GoalsBLL.js";
 import AccountsBLL from "../bll/AccountsBLL.js";
 import CurrenciesBLL from "../bll/CurrenciesBLL.js";
@@ -9,6 +9,7 @@ import GoalsList from "../components/goals/GoalsList.jsx";
 import GoalDetail from "../components/goals/GoalDetail.jsx";
 import AddGoalModal from "../components/goals/AddGoalModal.jsx";
 import AddContributionModal from "../components/goals/AddContributionModal.jsx";
+import GoalFilters from "../components/goals/GoalFilters.jsx";
 
 export default function Goals() {
   // ── Data ──
@@ -19,6 +20,9 @@ export default function Goals() {
 
   // ── View ──
   const [selectedGoal, setSelectedGoal] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [typeFilter, setTypeFilter] = useState("all");
+  const [stateFilter, setStateFilter] = useState("all");
 
   // ── Loading ──
   const [pageLoading, setPageLoading]                   = useState(true);
@@ -156,6 +160,45 @@ export default function Goals() {
     setDeletingContribution(false);
   };
 
+  const filteredGoals = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    const now = new Date();
+
+    return goals.filter((goal) => {
+      const name = (goal.goal_name || "").toLowerCase();
+      const matchesSearch = !q || name.includes(q);
+      if (!matchesSearch) return false;
+
+      const matchesType = typeFilter === "all" || goal.goal_type === typeFilter;
+      if (!matchesType) return false;
+
+      if (stateFilter === "all") return true;
+
+      const current = parseFloat(goal.current_amount || 0);
+      const target = parseFloat(goal.target_amount || 0);
+      const progress = target > 0 ? (current / target) * 100 : 0;
+      const isCompleted = progress >= 100;
+      const deadline = goal.deadline ? new Date(`${goal.deadline}T23:59:59`) : null;
+      const isOverdue = !isCompleted && deadline && deadline < now;
+      const hasNoDeadline = !isCompleted && !deadline;
+      const isActive = !isCompleted && !isOverdue;
+
+      if (stateFilter === "completed") return isCompleted;
+      if (stateFilter === "overdue") return Boolean(isOverdue);
+      if (stateFilter === "no_deadline") return hasNoDeadline;
+      if (stateFilter === "active") return isActive;
+      return true;
+    });
+  }, [goals, searchQuery, typeFilter, stateFilter]);
+
+  const hasActiveFilters = Boolean(searchQuery.trim()) || typeFilter !== "all" || stateFilter !== "all";
+
+  const handleResetFilters = () => {
+    setSearchQuery("");
+    setTypeFilter("all");
+    setStateFilter("all");
+  };
+
   if (pageLoading) return (
     <div className="flex items-center justify-center h-64 animate-fade-in">
       <Spinner size="lg" />
@@ -189,10 +232,26 @@ export default function Goals() {
         </div>
       )}
 
+      {!selectedGoal && (
+        <GoalFilters
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          typeFilter={typeFilter}
+          onTypeFilterChange={setTypeFilter}
+          stateFilter={stateFilter}
+          onStateFilterChange={setStateFilter}
+          onReset={handleResetFilters}
+          hasActiveFilters={hasActiveFilters}
+          visibleCount={filteredGoals.length}
+          totalCount={goals.length}
+        />
+      )}
+
       {/* ── View ── */}
       {!selectedGoal ? (
         <GoalsList
-          goals={goals}
+          goals={filteredGoals}
+          hasFilters={hasActiveFilters}
           onSelectGoal={(goal) => {
             setContributions([]);
             setSelectedGoal(goal);

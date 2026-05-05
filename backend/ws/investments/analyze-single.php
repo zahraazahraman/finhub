@@ -57,8 +57,23 @@ $investmentData = [
     'notes'          => $investment['notes'],
 ];
 
+// ── Read user tone preference (safe fallback for pre-migration sessions) ──
+$aiTone = $_SESSION['user']['ai_tone'] ?? 'professional';
+
+// ── Build tone instruction ──
+$toneInstruction = '';
+if ($aiTone === 'simple') {
+    $toneInstruction =
+        "IMPORTANT — LANGUAGE STYLE: The user reading this analysis is a complete beginner in investing. " .
+        "Write all text fields (performance_summary, market_context, action_advice, and key_factors) in simple, plain, everyday language. " .
+        "Avoid financial jargon entirely. If you must use a term like ROI (Return on Investment), P/L (Profit or Loss), " .
+        "or any other financial concept, explain it in plain words immediately after in parentheses. " .
+        "Keep sentences short. Be warm, encouraging, and easy to understand.\n\n";
+}
+
 // ── Build prompt ──
 $prompt =
+    $toneInstruction .
     "You are a professional financial analyst. Perform a deep analysis of this single investment.\n\n" .
     "Investment data:\n" . json_encode($investmentData, JSON_PRETTY_PRINT) . "\n\n" .
     "Provide a thorough analysis covering:\n" .

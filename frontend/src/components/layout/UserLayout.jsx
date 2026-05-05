@@ -80,6 +80,16 @@ const NAV_ITEMS = [
       </svg>
     ),
   },
+  {
+    path: "/profile",
+    label: "Profile & Settings",
+    icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+        <circle cx="12" cy="8" r="4" />
+        <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
+      </svg>
+    ),
+  },
 ];
 
 // Inner layout — has access to UserNotificationContext
@@ -143,7 +153,6 @@ function UserLayoutInner() {
             >
               <span className="relative flex-shrink-0">
                 {item.icon}
-                {/* Unread dot on Notifications nav item */}
                 {item.path === "/notifications" && unreadCount > 0 && (
                   <span className="absolute -top-1 -right-1 w-2 h-2 bg-emerald-500 rounded-full" />
                 )}
@@ -162,10 +171,17 @@ function UserLayoutInner() {
           ))}
         </nav>
 
-        {/* Bottom */}
+        {/* Bottom — avatar links to /profile */}
         <div className="p-2 border-t border-skin-border">
           {!collapsed && (
-            <div className="flex items-center gap-3 px-3 py-2 mb-1">
+            <NavLink
+              to="/profile"
+              className={({ isActive }) => `
+                flex items-center gap-3 px-3 py-2 mb-1 rounded-xl
+                transition-all duration-150
+                ${isActive ? "bg-emerald-500/10" : "hover:bg-skin-hover"}
+              `}
+            >
               <div className="w-7 h-7 rounded-full bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center flex-shrink-0">
                 <span className="text-emerald-500 text-xs font-bold">
                   {user?.first_name?.[0]?.toUpperCase() ?? "U"}
@@ -177,7 +193,7 @@ function UserLayoutInner() {
                 </p>
                 <p className="text-skin-text-muted text-[10px]">{user?.email}</p>
               </div>
-            </div>
+            </NavLink>
           )}
           <button
             onClick={() => setShowLogoutModal(true)}
@@ -230,11 +246,14 @@ function UserLayoutInner() {
             <span className="text-skin-text-secondary text-sm hidden md:block">
               {user?.first_name} {user?.last_name}
             </span>
-            <div className="w-8 h-8 rounded-full bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center">
-              <span className="text-emerald-500 text-xs font-bold">
-                {user?.first_name?.[0]?.toUpperCase() ?? "U"}
-              </span>
-            </div>
+            {/* Avatar in topbar also links to profile */}
+            <NavLink to="/profile">
+              <div className="w-8 h-8 rounded-full bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center hover:ring-2 hover:ring-emerald-500/40 transition-all">
+                <span className="text-emerald-500 text-xs font-bold">
+                  {user?.first_name?.[0]?.toUpperCase() ?? "U"}
+                </span>
+              </div>
+            </NavLink>
           </div>
         </header>
 
@@ -260,7 +279,6 @@ function UserLayoutInner() {
   );
 }
 
-// Outer wrapper provides the context
 export default function UserLayout() {
   return (
     <UserNotificationProvider>

@@ -1,6 +1,8 @@
 <?php
 require_once __DIR__ . '/../../config/config.php';
 require_once __DIR__ . '/../../config/database.php';
+require_once __DIR__ . '/../../services/Mailer.php';
+require_once __DIR__ . '/../../services/EmailTemplates.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
@@ -8,7 +10,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
-$body     = json_decode(file_get_contents('php://input'), true);
+$body      = json_decode(file_get_contents('php://input'), true);
 $firstName = trim($body['first_name'] ?? '');
 $lastName  = trim($body['last_name']  ?? '');
 $email     = trim($body['email']      ?? '');
@@ -46,7 +48,7 @@ try {
         exit;
     }
 
-    // Insert user
+    // Insert user (email_verified defaults to 0)
     $hash = password_hash($password, PASSWORD_BCRYPT);
     $stmt = $db->prepare(
         "INSERT INTO Users (first_name, last_name, email, password_hash, phone_number)
@@ -60,18 +62,31 @@ try {
         ':phone'         => $phone ?: null,
     ]);
 
-    $userId = $db->lastInsertId();
+    $userId = (int)$db->lastInsertId();
+
+    // Generate 6-digit OTP and save with 15-minute expiry
+    $code    = str_pad((string)random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+    $expires = date('Y-m-d H:i:s', strtotime('+15 minutes'));
+
+    $db->prepare(
+        "UPDATE Users
+         SET verification_code = :code, verification_code_expires_at = :expires
+         WHERE user_id = :id"
+    )->execute([':code' => $code, ':expires' => $expires, ':id' => $userId]);
+
+    // Send verification email (fire-and-forget — registration succeeds even if mail fails)
+    Mailer::send(
+        $email,
+        $firstName,
+        'Verify your FinHub account',
+        EmailTemplates::verificationCode($firstName, $code)
+    );
 
     http_response_code(201);
     echo json_encode([
         'success' => true,
-        'message' => 'Account created successfully.',
-        'user'    => [
-            'user_id'    => $userId,
-            'first_name' => $firstName,
-            'last_name'  => $lastName,
-            'email'      => $email,
-        ]
+        'message' => 'Account created. Please check your email for a verification code.',
+        'email'   => $email,
     ]);
 } catch (Exception $e) {
     http_response_code(500);

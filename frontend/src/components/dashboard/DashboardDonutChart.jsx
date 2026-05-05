@@ -1,5 +1,6 @@
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 import Card from "../ui/Card.jsx";
+import { formatCurrency } from "../../utils/formatters.js";
 
 // Enough colors for a realistic number of categories
 const COLORS = [
@@ -8,9 +9,12 @@ const COLORS = [
     "#38bdf8", "#e879f9",
 ];
 
-const CustomTooltip = ({ active, payload }) => {
+const CustomTooltip = ({ active, payload, total, currencySymbol }) => {
     if (!active || !payload?.length) return null;
-    const { name, value, percent } = payload[0].payload;
+    const entry = payload[0];
+    const { name, value } = entry.payload ?? {};
+    const numericValue = Number(value) || 0;
+    const percent = total > 0 ? (numericValue / total) * 100 : 0;
     return (
         <div className="border border-skin-border rounded-2xl px-4 py-3 text-sm"
              style={{ backgroundColor: "var(--bg-card)", boxShadow: "var(--shadow-lg)" }}>
@@ -18,23 +22,20 @@ const CustomTooltip = ({ active, payload }) => {
             <p className="text-skin-text-secondary">
                 Amount:{" "}
                 <span className="text-skin-text font-medium">
-                    {Number(value).toLocaleString("en-US", {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                    })}
+                    {formatCurrency(value, currencySymbol)}
                 </span>
             </p>
             <p className="text-skin-text-secondary">
                 Share:{" "}
                 <span className="text-skin-text font-medium">
-                    {(percent * 100).toFixed(1)}%
+                    {percent.toFixed(1)}%
                 </span>
             </p>
         </div>
     );
 };
 
-export default function DashboardDonutChart({ data = [] }) {
+export default function DashboardDonutChart({ data = [], currencySymbol = "$" }) {
     // Shape data for Recharts
     const shaped = data.map((row) => ({
         name:  row.category_name,
@@ -81,7 +82,7 @@ export default function DashboardDonutChart({ data = [] }) {
                                     />
                                 ))}
                             </Pie>
-                            <Tooltip content={<CustomTooltip />} />
+                            <Tooltip content={<CustomTooltip total={total} currencySymbol={currencySymbol} />} />
                         </PieChart>
                     </ResponsiveContainer>
 

@@ -55,8 +55,22 @@ foreach ($investments as $inv) {
     ];
 }
 
+// ── Read user tone preference (safe fallback for pre-migration sessions) ──
+$aiTone = $_SESSION['user']['ai_tone'] ?? 'professional';
+
 // ── Build prompt ──
+$toneInstruction = '';
+if ($aiTone === 'simple') {
+    $toneInstruction =
+        "IMPORTANT — LANGUAGE STYLE: The user reading this analysis is a complete beginner in investing. " .
+        "Write all text fields (reasoning, portfolio_summary, diversification_note) in simple, plain, everyday language. " .
+        "Avoid financial jargon entirely. If you must use a financial term such as ROI (Return on Investment), " .
+        "P/L (Profit or Loss), or diversification, explain it in plain words immediately after in parentheses. " .
+        "Keep sentences short. Be encouraging and easy to understand.\n\n";
+}
+
 $prompt =
+    $toneInstruction .
     "You are a professional financial analyst. Analyze this investment portfolio and provide clear, actionable recommendations.\n\n" .
     "Portfolio data:\n" . json_encode($portfolioData, JSON_PRETTY_PRINT) . "\n\n" .
     "For each investment provide:\n" .
@@ -75,7 +89,7 @@ $prompt =
     "  \"diversification_note\": \"...\"\n" .
     "}";
 
-// ── Call Groq API (same service used for receipt scan) ──
+// ── Call Groq API ──
 $apiKey = $_ENV['GROQ_API_KEY'] ?? '';
 if (empty($apiKey)) {
     echo json_encode(['success' => false, 'message' => 'AI service is not configured.']);
@@ -115,7 +129,6 @@ if (!$response || $httpCode !== 200) {
 $groqData = json_decode($response, true);
 $content  = trim($groqData['choices'][0]['message']['content'] ?? '');
 
-// Strip possible markdown fences the model might add despite instructions
 $content = preg_replace('/^```(?:json)?\s*/i', '', $content);
 $content = preg_replace('/\s*```$/i', '', trim($content));
 

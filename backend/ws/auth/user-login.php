@@ -2,6 +2,8 @@
 session_start();
 require_once __DIR__ . '/../../config/config.php';
 require_once __DIR__ . '/../../config/database.php';
+require_once __DIR__ . '/../../services/Mailer.php';
+require_once __DIR__ . '/../../services/EmailTemplates.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
@@ -22,7 +24,9 @@ if (!$email || !$password) {
 try {
     $db   = Database::getInstance();
     $stmt = $db->prepare(
-        "SELECT user_id, first_name, last_name, email, password_hash, status
+        "SELECT user_id, first_name, last_name, email, password_hash, status,
+                email_verified,
+                preferred_currency_id, ai_tone, ai_data_sharing, weekly_summary_enabled
          FROM Users WHERE email = :email LIMIT 1"
     );
     $stmt->execute([':email' => $email]);
@@ -46,11 +50,45 @@ try {
         exit;
     }
 
+    // ── Email not verified — generate a fresh OTP and redirect to verification ──
+    if (!(int)$user['email_verified']) {
+        $code    = str_pad((string)random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+        $expires = date('Y-m-d H:i:s', strtotime('+15 minutes'));
+
+        $db->prepare(
+            "UPDATE Users
+             SET verification_code = :code, verification_code_expires_at = :expires
+             WHERE user_id = :id"
+        )->execute([':code' => $code, ':expires' => $expires, ':id' => (int)$user['user_id']]);
+
+        Mailer::send(
+            $user['email'],
+            $user['first_name'],
+            'Verify your FinHub account',
+            EmailTemplates::verificationCode($user['first_name'], $code)
+        );
+
+        http_response_code(403);
+        echo json_encode([
+            'success'            => false,
+            'needs_verification' => true,
+            'email'              => $user['email'],
+            'message'            => 'Please verify your email before signing in. We sent a new code to your inbox.',
+        ]);
+        exit;
+    }
+
+    // ── Verified — create session and return user ──
     $_SESSION['user'] = [
-        'user_id'    => $user['user_id'],
-        'first_name' => $user['first_name'],
-        'last_name'  => $user['last_name'],
-        'email'      => $user['email'],
+        'user_id'                => $user['user_id'],
+        'first_name'             => $user['first_name'],
+        'last_name'              => $user['last_name'],
+        'email'                  => $user['email'],
+        // Preferences — all with safe fallbacks for rows created before migration
+        'preferred_currency_id'  => (int)($user['preferred_currency_id'] ?? 1),
+        'ai_tone'                => $user['ai_tone'] ?? 'professional',
+        'ai_data_sharing'        => (int)($user['ai_data_sharing'] ?? 1),
+        'weekly_summary_enabled' => (int)($user['weekly_summary_enabled'] ?? 1),
     ];
 
     http_response_code(200);

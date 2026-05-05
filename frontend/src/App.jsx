@@ -12,6 +12,7 @@ import LandingPage from "./pages/LandingPage.jsx";
 import AdminLoginPage from "./pages/AdminLoginPage.jsx";
 import RegisterPage from "./pages/RegisterPage.jsx";
 import UserLoginPage from "./pages/UserLoginPage.jsx";
+import VerifyEmailPage from "./pages/VerifyEmailPage.jsx";
 
 // Admin pages
 import AdminLayout from "./components/layout/AdminLayout.jsx";
@@ -31,6 +32,7 @@ import Investments from "./user/Investments.jsx";
 import UserConsultants from "./user/UserConsultants.jsx";
 import Reminders from "./user/Reminders.jsx";
 import UserNotificationsPage from "./user/UserNotificationsPage.jsx";
+import Profile from "./user/Profile.jsx";
 
 export default function App() {
   return (
@@ -45,6 +47,7 @@ export default function App() {
                   <Route path="/" element={<LandingPage />} />
                   <Route path="/login" element={<UserLoginPage />} />
                   <Route path="/register" element={<RegisterPage />} />
+                  <Route path="/verify-email" element={<VerifyEmailPage />} />
                   <Route path="/admin/login" element={<AdminLoginPage />} />
 
                   {/* Admin - protected */}
@@ -81,6 +84,7 @@ export default function App() {
                     <Route path="consultants" element={<UserConsultants />} />
                     <Route path="reminders" element={<Reminders />} />
                     <Route path="notifications" element={<UserNotificationsPage />} />
+                    <Route path="profile" element={<Profile />} />
                   </Route>
 
                   {/* Fallback */}

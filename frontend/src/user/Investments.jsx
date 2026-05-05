@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import InvestmentsBLL from "../bll/InvestmentsBLL.js";
 import CurrenciesBLL from "../bll/CurrenciesBLL.js";
 import { useInvestmentAnalysis } from "../context/InvestmentAnalysisContext.jsx";
@@ -10,6 +10,7 @@ import InvestmentDetail from "../components/investments/InvestmentDetail.jsx";
 import AddInvestmentModal from "../components/investments/AddInvestmentModal.jsx";
 import AIAnalysisModal from "../components/investments/AIAnalysisModal.jsx";
 import UpdatePriceModal from "../components/investments/UpdatePriceModal.jsx";
+import InvestmentFilters, { DEFAULT_TIME_FILTER } from "../components/investments/InvestmentFilters.jsx";
 
 export default function Investments() {
   // ── Data ──
@@ -18,6 +19,10 @@ export default function Investments() {
 
   // ── View ──
   const [selectedInvestment, setSelectedInvestment] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [timeFilter, setTimeFilter] = useState(DEFAULT_TIME_FILTER);
+  const [typeFilter, setTypeFilter] = useState("all");
+  const [customDateRange, setCustomDateRange] = useState({ from: "", to: "" });
 
   // ── Loading ──
   const [pageLoading, setPageLoading] = useState(true);
@@ -154,6 +159,69 @@ export default function Investments() {
     else setAnalysisError(id, result.error);
   };
 
+  const filteredInvestments = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    const now = new Date();
+
+    const getRangeStart = () => {
+      const start = new Date(now);
+      if (timeFilter === "30d") {
+        start.setDate(start.getDate() - 30);
+        return start;
+      }
+      if (timeFilter === "3m") {
+        start.setMonth(start.getMonth() - 3);
+        return start;
+      }
+      if (timeFilter === "6m") {
+        start.setMonth(start.getMonth() - 6);
+        return start;
+      }
+      if (timeFilter === "1y") {
+        start.setFullYear(start.getFullYear() - 1);
+        return start;
+      }
+      return null;
+    };
+
+    const presetStart = getRangeStart();
+    const customFrom = customDateRange.from ? new Date(`${customDateRange.from}T00:00:00`) : null;
+    const customTo = customDateRange.to ? new Date(`${customDateRange.to}T23:59:59`) : null;
+
+    return investments.filter((inv) => {
+      const name = (inv.investment_name || "").toLowerCase();
+      const symbol = (inv.symbol || "").toLowerCase();
+      const notes = (inv.notes || "").toLowerCase();
+      const matchesSearch = !q || name.includes(q) || symbol.includes(q) || notes.includes(q);
+      if (!matchesSearch) return false;
+
+      const matchesType = typeFilter === "all" || inv.investment_type === typeFilter;
+      if (!matchesType) return false;
+
+      if (timeFilter === "all") return true;
+
+      const purchaseDate = inv.purchase_date ? new Date(`${inv.purchase_date}T12:00:00`) : null;
+      if (!purchaseDate || Number.isNaN(purchaseDate.getTime())) return false;
+
+      if (timeFilter === "custom") {
+        if (customFrom && purchaseDate < customFrom) return false;
+        if (customTo && purchaseDate > customTo) return false;
+        return true;
+      }
+
+      return presetStart ? purchaseDate >= presetStart : true;
+    });
+  }, [investments, searchQuery, timeFilter, typeFilter, customDateRange]);
+
+  const hasActiveFilters = Boolean(searchQuery.trim()) || timeFilter !== DEFAULT_TIME_FILTER || typeFilter !== "all";
+
+  const handleResetFilters = () => {
+    setSearchQuery("");
+    setTimeFilter(DEFAULT_TIME_FILTER);
+    setTypeFilter("all");
+    setCustomDateRange({ from: "", to: "" });
+  };
+
   if (pageLoading) return (
     <div className="flex items-center justify-center h-64 animate-fade-in">
       <Spinner size="lg" />
@@ -204,10 +272,28 @@ export default function Investments() {
         </div>
       )}
 
+      {!selectedInvestment && (
+        <InvestmentFilters
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          timeFilter={timeFilter}
+          onTimeFilterChange={setTimeFilter}
+          typeFilter={typeFilter}
+          onTypeFilterChange={setTypeFilter}
+          customDateRange={customDateRange}
+          onCustomDateRangeChange={setCustomDateRange}
+          onReset={handleResetFilters}
+          hasActiveFilters={hasActiveFilters}
+          visibleCount={filteredInvestments.length}
+          totalCount={investments.length}
+        />
+      )}
+
       {/* ── View ── */}
       {!selectedInvestment ? (
         <InvestmentsList
-          investments={investments}
+          investments={filteredInvestments}
+          hasFilters={hasActiveFilters}
           onSelectInvestment={(inv) => setSelectedInvestment(inv)}
           onAddInvestment={() => setShowAddInvestment(true)}
           onDeleteInvestment={setDeleteTarget}

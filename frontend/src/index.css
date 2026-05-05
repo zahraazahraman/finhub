@@ -3,11 +3,11 @@
 
 :root {
   /* Backgrounds */
-  --bg-primary:    #f7f5f2;
-  --bg-secondary:  #efece6;
-  --bg-card:       #ffffff;
-  --bg-input:      #e8e5df;
-  --bg-hover:      #e3dfd8;
+  --bg-primary:    #ffffff;
+  --bg-secondary:  #f7f5f2;
+  --bg-card:       #eee9e2;
+  --bg-input:      #e0d5ca;
+  --bg-hover:      #dfd9d0;
 
   /* Borders */
   --border:        rgba(0,0,0,0.06);

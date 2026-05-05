@@ -1,3 +1,4 @@
+import { useState } from "react";
 import Card from "../ui/Card.jsx";
 import Badge from "../ui/Badge.jsx";
 import Button from "../ui/Button.jsx";
@@ -34,10 +35,53 @@ function computeMetrics(inv) {
   return { qty, buyPrice, curPrice, costBasis, currentValue, profitLoss, roi };
 }
 
-function StatCard({ label, value, highlight }) {
+function StatCard({ label, value, highlight, infoText }) {
+  const [showInfo, setShowInfo] = useState(false);
+
   return (
     <Card padding="md">
-      <p className="text-skin-text-muted text-xs mb-1">{label}</p>
+      <div className="flex items-center gap-2 mb-1">
+        <p className="text-skin-text-muted text-xs">{label}</p>
+
+        {infoText && (
+          // This wrapper is relative so the tooltip is anchored to the button,
+          // not to the card — preventing overlap with cards below.
+          <div className="relative flex items-center">
+            <button
+              type="button"
+              onClick={() => setShowInfo((v) => !v)}
+              onBlur={() => setShowInfo(false)}
+              className="w-4 h-4 rounded-full border border-skin-border text-skin-text-muted
+                         text-[10px] leading-none flex items-center justify-center
+                         hover:text-skin-text hover:border-skin-text-muted transition-colors"
+              aria-label={`Explain ${label}`}
+              aria-expanded={showInfo}
+            >
+              ?
+            </button>
+
+            {showInfo && (
+              <div
+                className="
+                  absolute z-20 w-64 rounded-xl border border-skin-border p-3 shadow-xl
+                  bottom-full mb-2 right-0
+                "
+                style={{ backgroundColor: "var(--bg-card)" }}
+              >
+                <p className="text-skin-text-secondary text-xs leading-relaxed">
+                  {infoText}
+                </p>
+                {/* Downward pointing arrow */}
+                <div
+                  className="absolute -bottom-[5px] right-3 w-2.5 h-2.5 rotate-45 border-r border-b border-skin-border"
+                  style={{ backgroundColor: "var(--bg-card)" }}
+                />
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
       <p className={`text-lg font-bold ${highlight ?? "text-skin-text"}`}>{value}</p>
     </Card>
   );
@@ -142,7 +186,7 @@ export default function InvestmentDetail({
   onDelete,
   onUpdatePrice,
   onAnalyze,
-  analysisState, // { loading, error, data } | null — from context
+  analysisState,
 }) {
   const typeConfig = TYPE_CONFIG[investment.investment_type] || TYPE_CONFIG.other;
   const { qty, buyPrice, curPrice, costBasis, currentValue, profitLoss, roi } = computeMetrics(investment);
@@ -197,7 +241,6 @@ export default function InvestmentDetail({
 
         {/* ── Action buttons ── */}
         <div className="flex items-center gap-2">
-          {/* AI Analyze button */}
           <Button
             variant="secondary"
             size="sm"
@@ -215,7 +258,6 @@ export default function InvestmentDetail({
             {isAnalyzing ? "Analyzing..." : "Analyze"}
           </Button>
 
-          {/* Update Price — only for manual types */}
           {!isAutoTracked(investment.investment_type) && (
             <Button
               variant="secondary"
@@ -264,6 +306,7 @@ export default function InvestmentDetail({
           label="ROI"
           value={(isPositive ? "+" : "") + roi.toFixed(2) + "%"}
           highlight={isPositive ? "text-emerald-500" : "text-red-500"}
+          infoText="ROI (Return on Investment) shows how much your investment gained or lost relative to the purchase price. Calculated as: ((current price − purchase price) ÷ purchase price) × 100."
         />
       </div>
 

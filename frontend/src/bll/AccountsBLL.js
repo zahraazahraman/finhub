@@ -17,7 +17,7 @@ export default class AccountsBLL {
     if (Object.keys(errors).length > 0) return { success: false, validationErrors: errors };
 
     const { ok, data } = await AccountsDAL.create(formData);
-    if (ok && data.success) return { success: true };
+    if (ok && data.success) return { success: true, account_id: data.account_id };
     return { success: false, error: data.message || "Failed to create account." };
   }
 

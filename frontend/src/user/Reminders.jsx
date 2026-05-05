@@ -198,16 +198,16 @@ export default function Reminders() {
       {/* ── Main view ── */}
       {!selectedBill ? (
         <>
+          <WeeklySummaryCard
+            onSend={handleSendWeekly}
+            sending={sendingWeekly}
+            message={weeklyMessage}
+          />
           <BillsList
             bills={bills}
             onSelectBill={(bill) => { setReminders([]); setSelectedBill(bill); }}
             onAddBill={() => setShowAddBill(true)}
             onDeleteBill={setDeleteBillTarget}
-          />
-          <WeeklySummaryCard
-            onSend={handleSendWeekly}
-            sending={sendingWeekly}
-            message={weeklyMessage}
           />
         </>
       ) : (
