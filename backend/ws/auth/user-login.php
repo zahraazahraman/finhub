@@ -78,18 +78,41 @@ try {
         exit;
     }
 
-    // ── Verified — create session and return user ──
+    // ── Verified — create PHP session ──
     $_SESSION['user'] = [
         'user_id'                => $user['user_id'],
         'first_name'             => $user['first_name'],
         'last_name'              => $user['last_name'],
         'email'                  => $user['email'],
-        // Preferences — all with safe fallbacks for rows created before migration
-        'preferred_currency_id'  => (int)($user['preferred_currency_id'] ?? 1),
-        'ai_tone'                => $user['ai_tone'] ?? 'professional',
-        'ai_data_sharing'        => (int)($user['ai_data_sharing'] ?? 1),
-        'weekly_summary_enabled' => (int)($user['weekly_summary_enabled'] ?? 1),
+        'preferred_currency_id'  => (int) ($user['preferred_currency_id'] ?? 1),
+        'ai_tone'                => $user['ai_tone']               ?? 'professional',
+        'ai_data_sharing'        => (int) ($user['ai_data_sharing']        ?? 1),
+        'weekly_summary_enabled' => (int) ($user['weekly_summary_enabled'] ?? 1),
     ];
+
+    // ── Persistent session token (30 days) ──
+    // One active token per user at a time — replace any existing tokens.
+    $token   = bin2hex(random_bytes(32));
+    $expires = date('Y-m-d H:i:s', strtotime('+30 days'));
+
+    $db->prepare("DELETE FROM UserSessions WHERE user_id = :id")
+       ->execute([':id' => (int) $user['user_id']]);
+
+    $db->prepare(
+        "INSERT INTO UserSessions (user_id, session_token, expires_at)
+         VALUES (:user_id, :token, :expires)"
+    )->execute([
+        ':user_id' => (int) $user['user_id'],
+        ':token'   => $token,
+        ':expires' => $expires,
+    ]);
+
+    setcookie('finhub_token', $token, [
+        'expires'  => time() + (30 * 24 * 60 * 60),
+        'path'     => '/',
+        'httponly' => true,   // not accessible to JavaScript
+        'samesite' => 'Lax',  // safe default; use 'Strict' if the app is never opened via external links
+    ]);
 
     http_response_code(200);
     echo json_encode([

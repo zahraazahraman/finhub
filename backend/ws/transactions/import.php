@@ -9,7 +9,7 @@ require_once __DIR__ . '/../../vendor/autoload.php';
 
 use PhpOffice\PhpSpreadsheet\IOFactory;
 
-AuthMiddleware::verifyUser();
+AuthMiddleware::requireUser();
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);

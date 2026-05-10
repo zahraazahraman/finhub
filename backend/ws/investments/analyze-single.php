@@ -6,7 +6,7 @@ require_once __DIR__ . '/../../dal/InvestmentDAL.php';
 
 header('Content-Type: application/json');
 
-AuthMiddleware::verifyUser();
+AuthMiddleware::requireUser();
 $user   = AuthMiddleware::getUser();
 $userId = (int)$user['user_id'];
 

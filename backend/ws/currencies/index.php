@@ -4,7 +4,7 @@ require_once __DIR__ . '/../../config/config.php';
 require_once __DIR__ . '/../../middleware/AuthMiddleware.php';
 require_once __DIR__ . '/../../bll/CurrencyBLL.php';
 
-AuthMiddleware::verifyUser();
+AuthMiddleware::requireUser();
 
 if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
     http_response_code(405);

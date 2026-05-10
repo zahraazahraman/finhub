@@ -4,7 +4,7 @@ require_once __DIR__ . '/../../config/config.php';
 require_once __DIR__ . '/../../middleware/AuthMiddleware.php';
 require_once __DIR__ . '/../../bll/UserConsultantBLL.php';
 
-AuthMiddleware::verifyUser();
+AuthMiddleware::requireUser();
 
 $method = $_SERVER['REQUEST_METHOD'];
 $bll    = new UserConsultantBLL();

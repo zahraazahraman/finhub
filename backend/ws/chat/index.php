@@ -4,7 +4,7 @@ require_once __DIR__ . '/../../config/config.php';
 require_once __DIR__ . '/../../middleware/AuthMiddleware.php';
 require_once __DIR__ . '/../../bll/ChatBLL.php';
 
-AuthMiddleware::verifyUser();
+AuthMiddleware::requireUser();
 $user   = AuthMiddleware::getUser();
 $userId = (int)$user['user_id'];
 

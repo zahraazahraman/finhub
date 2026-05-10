@@ -6,7 +6,7 @@ require_once __DIR__ . '/../../bll/GoalBLL.php';
 
 header('Content-Type: application/json');
 
-AuthMiddleware::verifyUser();
+AuthMiddleware::requireUser();
 $user    = AuthMiddleware::getUser();
 $userId  = (int)$user['user_id'];
 $method  = $_SERVER['REQUEST_METHOD'];
