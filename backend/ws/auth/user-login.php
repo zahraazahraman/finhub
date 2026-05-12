@@ -15,6 +15,13 @@ $body     = json_decode(file_get_contents('php://input'), true);
 $email    = trim($body['email']    ?? '');
 $password = trim($body['password'] ?? '');
 
+// Accept the IANA timezone detected by the browser. Fall back to UTC if
+// missing or unrecognised so date comparisons always have a safe default.
+$timezone = trim($body['timezone'] ?? 'UTC');
+if (!in_array($timezone, timezone_identifiers_list(), true)) {
+    $timezone = 'UTC';
+}
+
 if (!$email || !$password) {
     http_response_code(400);
     echo json_encode(['success' => false, 'message' => 'Email and password are required.']);
@@ -50,7 +57,7 @@ try {
         exit;
     }
 
-    // ── Email not verified — generate a fresh OTP and redirect to verification ──
+    // ── Email not verified — send a fresh OTP and redirect ──
     if (!(int)$user['email_verified']) {
         $code    = str_pad((string)random_int(0, 999999), 6, '0', STR_PAD_LEFT);
         $expires = date('Y-m-d H:i:s', strtotime('+15 minutes'));
@@ -78,6 +85,10 @@ try {
         exit;
     }
 
+    // ── Persist the detected timezone so reminder logic uses the user's local date ──
+    $db->prepare("UPDATE Users SET timezone = :tz WHERE user_id = :id")
+       ->execute([':tz' => $timezone, ':id' => (int)$user['user_id']]);
+
     // ── Verified — create PHP session ──
     $_SESSION['user'] = [
         'user_id'                => $user['user_id'],
@@ -88,10 +99,10 @@ try {
         'ai_tone'                => $user['ai_tone']               ?? 'professional',
         'ai_data_sharing'        => (int) ($user['ai_data_sharing']        ?? 1),
         'weekly_summary_enabled' => (int) ($user['weekly_summary_enabled'] ?? 1),
+        'timezone'               => $timezone,
     ];
 
     // ── Persistent session token (30 days) ──
-    // One active token per user at a time — replace any existing tokens.
     $token   = bin2hex(random_bytes(32));
     $expires = date('Y-m-d H:i:s', strtotime('+30 days'));
 
@@ -110,8 +121,8 @@ try {
     setcookie('finhub_token', $token, [
         'expires'  => time() + (30 * 24 * 60 * 60),
         'path'     => '/',
-        'httponly' => true,   // not accessible to JavaScript
-        'samesite' => 'Lax',  // safe default; use 'Strict' if the app is never opened via external links
+        'httponly' => true,
+        'samesite' => 'Lax',
     ]);
 
     http_response_code(200);

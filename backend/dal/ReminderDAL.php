@@ -76,7 +76,14 @@ class ReminderDAL {
         return $stmt->rowCount() > 0;
     }
 
-    public function getDueForUser(int $userId): array {
+    /**
+     * Returns unsent reminders whose reminder date is on or before the user's
+     * local date today. The caller passes $today as 'Y-m-d' derived from the
+     * user's stored IANA timezone — this avoids depending on MySQL's NOW()
+     * which uses the server timezone and would fire reminders at the wrong time
+     * for users in different timezones.
+     */
+    public function getDueForUser(int $userId, string $today): array {
         $stmt = $this->db->prepare(
             "SELECT r.*, b.name AS bill_name, b.amount, b.due_date,
                     c.code AS currency_code, c.symbol AS currency_symbol
@@ -85,10 +92,10 @@ class ReminderDAL {
              JOIN Currencies c ON b.currency_id = c.currency_id
              WHERE r.user_id = :user_id
                AND r.is_sent = 0
-               AND r.reminder_date <= NOW()
+               AND DATE(r.reminder_date) <= :today
                AND b.is_paid = 0"
         );
-        $stmt->execute([':user_id' => $userId]);
+        $stmt->execute([':user_id' => $userId, ':today' => $today]);
         return $stmt->fetchAll();
     }
 

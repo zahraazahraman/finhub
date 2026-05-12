@@ -13,6 +13,12 @@ class Database {
                 PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
                 PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
             ]);
+            // Ensure the MySQL session timezone is UTC so comparisons with PHP times are consistent.
+            try {
+                self::$instance->exec("SET time_zone = '+00:00'");
+            } catch (Exception $e) {
+                // Ignore — if the DB user lacks privileges this will fail, but PHP UTC still helps.
+            }
         }
         return self::$instance;
     }

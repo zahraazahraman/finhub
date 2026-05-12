@@ -158,13 +158,17 @@ class BillBLL {
         if (!$bill || (int)$bill['user_id'] !== $userId)
             return ['success' => false, 'message' => 'Bill not found.'];
 
-        $reminders = $this->reminderDal->getByBill($billId);
-        // Also provide the total active reminders count for the user
+        $reminders      = $this->reminderDal->getByBill($billId);
         $totalReminders = $this->reminderDal->countByUser($userId);
         return ['success' => true, 'reminders' => $reminders, 'total_reminders' => $totalReminders];
     }
 
-    public function addReminder(int $userId, int $billId, array $data): array {
+    /**
+     * $user is the session user array — required so the "already in the past"
+     * check uses the user's local date, not the server's.
+     * In the reminders WS index.php, pass AuthMiddleware::getUser() as $user.
+     */
+    public function addReminder(int $userId, int $billId, array $data, array $user = []): array {
         $daysBefore = (int)($data['days_before'] ?? 0);
 
         $bill = $this->billDal->getById($billId);
@@ -183,10 +187,11 @@ class BillBLL {
         $reminderDate = clone $dueDate;
         $reminderDate->modify("-{$daysBefore} days");
 
-        if ($reminderDate <= new DateTime('today'))
+        // Compare against the user's local midnight so a user in UTC+3 doesn't
+        // get a false "already in the past" error when the server is still UTC yesterday.
+        if ($reminderDate <= $this->userToday($user))
             return ['success' => false, 'message' => 'The reminder date would already be in the past. Choose fewer days or a later due date.'];
 
-        // Create a generic message (will be calculated dynamically at send time)
         $message = "Bill reminder for {$bill['name']}";
 
         $reminderId = $this->reminderDal->create(
@@ -213,7 +218,11 @@ class BillBLL {
         return ['success' => true];
     }
 
-    public function updateReminder(int $userId, int $reminderId, array $data): array {
+    /**
+     * $user is the session user array — required for timezone-aware date check.
+     * In the reminders WS index.php, pass AuthMiddleware::getUser() as $user.
+     */
+    public function updateReminder(int $userId, int $reminderId, array $data, array $user = []): array {
         if ($reminderId <= 0)
             return ['success' => false, 'message' => 'Invalid reminder.'];
 
@@ -228,14 +237,14 @@ class BillBLL {
             return ['success' => false, 'message' => 'Cannot edit a reminder for a paid bill.'];
 
         $daysBefore = (int)($data['days_before'] ?? 0);
-        if (!in_array($daysBefore, [1,3,7,14]))
+        if (!in_array($daysBefore, [1, 3, 7, 14]))
             return ['success' => false, 'message' => 'Invalid days before value. Choose 1, 3, 7, or 14.'];
 
         $dueDate      = new DateTime($bill['due_date']);
         $reminderDate = clone $dueDate;
         $reminderDate->modify("-{$daysBefore} days");
 
-        if ($reminderDate <= new DateTime('today'))
+        if ($reminderDate <= $this->userToday($user))
             return ['success' => false, 'message' => 'The reminder date would already be in the past. Choose fewer days or a later due date.'];
 
         $updated = $this->reminderDal->update($reminderId, $daysBefore, $reminderDate->format('Y-m-d H:i:s'));
@@ -248,22 +257,37 @@ class BillBLL {
     // ── Email: Send due reminders (called on page load) ────────────
 
     public function sendDueReminders(int $userId, array $user): array {
-        $due  = $this->reminderDal->getDueForUser($userId);
-        $sent = 0;
+        // Determine "today" in the user's local timezone once for the whole method.
+        $today = $this->userToday($user);
+        $due   = $this->reminderDal->getDueForUser($userId, $today->format('Y-m-d'));
+        $sent  = 0;
 
         foreach ($due as $reminder) {
-            // Calculate the actual days remaining from today to due date
-            $today = new DateTime('today');
-            $dueDate = new DateTime($reminder['due_date']);
-            $daysRemaining = $dueDate->diff($today)->days;
-            $dayWord = $daysRemaining === 1 ? 'day' : 'days';
-            
-            $dynamicMessage = "Your bill \"{$reminder['bill_name']}\" of {$reminder['currency_symbol']}"
-                            . number_format((float)$reminder['amount'], 2)
-                            . " is due in {$daysRemaining} {$dayWord} on "
-                            . date('F j, Y', strtotime($reminder['due_date'])) . ".";
-            
-            $html    = EmailTemplates::reminder($reminder);
+            $dueDate       = new DateTime($reminder['due_date']);
+            $daysRemaining = (int)$today->diff($dueDate)->days;
+            $dayWord       = $daysRemaining === 1 ? 'day' : 'days';
+
+                        // Localize due date for message and email using user's timezone
+                        $userTz = $user['timezone'] ?? 'UTC';
+                        try {
+                            $dueDt = DateTime::createFromFormat('Y-m-d H:i:s', $reminder['due_date'], new DateTimeZone('UTC'));
+                            if ($dueDt !== false) {
+                                if (!in_array($userTz, DateTimeZone::listIdentifiers(), true)) $userTz = 'UTC';
+                                $dueDt->setTimezone(new DateTimeZone($userTz));
+                                $dueDisplay = $dueDt->format('F j, Y');
+                            } else {
+                                $dueDisplay = date('F j, Y', strtotime($reminder['due_date']));
+                            }
+                        } catch (Exception $e) {
+                            $dueDisplay = date('F j, Y', strtotime($reminder['due_date']));
+                        }
+
+                        $dynamicMessage = "Your bill \"{$reminder['bill_name']}\" of {$reminder['currency_symbol']}"
+                                                        . number_format((float)$reminder['amount'], 2)
+                                                        . " is due in {$daysRemaining} {$dayWord} on "
+                                                        . $dueDisplay . ".";
+
+                        $html    = EmailTemplates::reminder($reminder, $userTz);
             $subject = "Bill Reminder: {$reminder['bill_name']}";
             $ok      = Mailer::send($user['email'], $user['first_name'] . ' ' . $user['last_name'], $subject, $html);
 
@@ -273,7 +297,6 @@ class BillBLL {
             if ($ok) {
                 $this->reminderDal->markAsSent((int)$reminder['reminder_id']);
 
-                // ── In-app notification: bill reminder ──
                 $this->notifDal->create(
                     $userId,
                     'bill',
@@ -298,8 +321,10 @@ class BillBLL {
                 return ['success' => false, 'message' => "Weekly summary was already sent {$diff} day(s) ago. You can send again in " . (7 - $diff) . " day(s)."];
         }
 
-        $bills         = $this->billDal->getByUser($userId);
-        $today         = new DateTime('today');
+        $bills = $this->billDal->getByUser($userId);
+
+        // Use the user's local date so "this week" means the next 7 days in their timezone.
+        $today         = $this->userToday($user);
         $upcomingBills = array_values(array_filter($bills, function ($b) use ($today) {
             if ($b['is_paid']) return false;
             $due  = new DateTime($b['due_date']);
@@ -307,7 +332,7 @@ class BillBLL {
             return $due >= $today && $diff <= 7;
         }));
 
-        $html = EmailTemplates::weeklySummary($user, $bills, $upcomingBills);
+        $html = EmailTemplates::weeklySummary($user, $bills, $upcomingBills, $user['timezone'] ?? 'UTC');
         $ok   = Mailer::send($user['email'], $user['first_name'] . ' ' . $user['last_name'], 'Your FinHub Weekly Summary', $html);
 
         $this->reminderDal->logEmail($userId, 'weekly_summary', $ok ? 'sent' : 'failed');
@@ -318,6 +343,20 @@ class BillBLL {
     }
 
     // ── Private helpers ────────────────────────────────────────────
+
+    /**
+     * Returns a DateTime at midnight in the user's stored IANA timezone.
+     * Falls back to UTC if the timezone is missing or invalid.
+     * Used anywhere date comparisons need to reflect the user's local day,
+     * not the server's timezone.
+     */
+    private function userToday(array $user): DateTime {
+        $tzName = $user['timezone'] ?? 'UTC';
+        if (!in_array($tzName, timezone_identifiers_list(), true)) {
+            $tzName = 'UTC';
+        }
+        return new DateTime('today', new DateTimeZone($tzName));
+    }
 
     private function computeNextDueDate(string $currentDue, string $recurrenceType): string {
         $date = new DateTime($currentDue);

@@ -13,6 +13,9 @@ if (file_exists($envFile)) {
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
 
+// Ensure PHP uses UTC for all date/time operations to match the database session.
+date_default_timezone_set('UTC');
+
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: http://localhost:5173');
 header('Access-Control-Allow-Credentials: true');

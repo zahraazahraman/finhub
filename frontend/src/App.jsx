@@ -13,6 +13,8 @@ import AdminLoginPage from "./pages/AdminLoginPage.jsx";
 import RegisterPage from "./pages/RegisterPage.jsx";
 import UserLoginPage from "./pages/UserLoginPage.jsx";
 import VerifyEmailPage from "./pages/VerifyEmailPage.jsx";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage.jsx";
+import ResetPasswordPage from "./pages/ResetPasswordPage.jsx";
 
 // Admin pages
 import AdminLayout from "./components/layout/AdminLayout.jsx";
@@ -48,7 +50,11 @@ export default function App() {
                   <Route path="/login" element={<UserLoginPage />} />
                   <Route path="/register" element={<RegisterPage />} />
                   <Route path="/verify-email" element={<VerifyEmailPage />} />
+                  <Route path="/forgot-password" element={<ForgotPasswordPage role="user" />} />
+                  <Route path="/reset-password" element={<ResetPasswordPage role="user" />} />
                   <Route path="/admin/login" element={<AdminLoginPage />} />
+                  <Route path="/admin/forgot-password" element={<ForgotPasswordPage role="admin" />} />
+                  <Route path="/admin/reset-password" element={<ResetPasswordPage role="admin" />} />
 
                   {/* Admin - protected */}
                   <Route

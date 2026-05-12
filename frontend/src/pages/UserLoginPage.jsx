@@ -7,11 +7,14 @@ import Card from "../components/ui/Card.jsx";
 
 class UserAuthDAL {
   static async loginRequest(email, password) {
+    // Detect the device timezone and include it so the backend can store it.
+    // This ensures bill reminders and date logic always use the user's local time.
+    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
     const res = await fetch("/api/auth/user-login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ email, password, timezone }),
     });
     return { ok: res.ok, data: await res.json() };
   }
@@ -37,7 +40,6 @@ class UserAuthBLL {
       const { ok, data } = await UserAuthDAL.loginRequest(email, password);
       if (ok && data.success)
         return { success: true, user: data.user };
-      // Unverified account — backend returns needs_verification + email
       if (!ok && data.needs_verification)
         return { success: false, needsVerification: true, email: data.email, serverError: data.message };
       return { success: false, serverError: data.message || "Invalid credentials." };
@@ -47,75 +49,14 @@ class UserAuthBLL {
   }
 }
 
-// ── Input Field ──
-function InputField({ id, label, type = "text", value, onChange, error, placeholder, icon }) {
-  const [showPassword, setShowPassword] = useState(false);
-  const isPassword = type === "password";
-  const inputType  = isPassword ? (showPassword ? "text" : "password") : type;
-
-  return (
-    <div className="mb-5">
-      <label htmlFor={id} className="block text-sm font-medium text-skin-text-secondary mb-1.5">
-        {label}
-      </label>
-      <div className="relative">
-        <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-skin-text-muted pointer-events-none">
-          {icon}
-        </div>
-        <input
-          id={id}
-          type={inputType}
-          value={value}
-          onChange={onChange}
-          placeholder={placeholder}
-          className={`
-            w-full bg-skin-input border rounded-xl pl-10 py-3 pr-4
-            text-skin-text placeholder-skin-text-muted text-sm
-            focus:outline-none focus:ring-2 transition-all duration-150
-            ${error
-              ? "border-red-500/60 focus:ring-red-500/30"
-              : "border-skin-border focus:ring-emerald-500/40 focus:border-emerald-500/50"
-            }
-          `}
-        />
-        {isPassword && (
-          <button
-            type="button"
-            onClick={() => setShowPassword((v) => !v)}
-            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-skin-text-muted hover:text-skin-text transition-colors duration-150"
-          >
-            {showPassword ? (
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
-                <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
-                <line x1="1" y1="1" x2="23" y2="23" />
-              </svg>
-            ) : (
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                <circle cx="12" cy="12" r="3" />
-              </svg>
-            )}
-          </button>
-        )}
-      </div>
-      {error && (
-        <p className="mt-1.5 text-xs text-red-500 flex items-center gap-1">
-          <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-          </svg>
-          {error}
-        </p>
-      )}
-    </div>
-  );
-}
-
 export default function UserLoginPage() {
   const navigate  = useNavigate();
   const location  = useLocation();
   const { login } = useUser();
-  const justRegistered = new URLSearchParams(location.search).get("registered");
+
+  const params         = new URLSearchParams(location.search);
+  const justRegistered = params.get("registered");
+  const justReset      = params.get("reset");
 
   const [email, setEmail]             = useState("");
   const [password, setPassword]       = useState("");
@@ -135,8 +76,6 @@ export default function UserLoginPage() {
       login(result.user);
       navigate("/dashboard");
     } else if (result.needsVerification) {
-      // Credentials were correct but email isn't verified.
-      // Backend already sent a fresh OTP — send user straight to the verify page.
       navigate(`/verify-email?email=${encodeURIComponent(result.email)}`);
     } else if (result.validationErrors) {
       setFieldErrors(result.validationErrors);
@@ -209,6 +148,15 @@ export default function UserLoginPage() {
               </Link>
             </p>
 
+            {justReset === "success" && (
+              <div className="mb-5 flex items-start gap-3 bg-emerald-500/10 border border-emerald-500/30 text-emerald-500 text-sm rounded-xl px-4 py-3">
+                <svg className="w-4 h-4 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+                Password reset successfully! Please sign in with your new password.
+              </div>
+            )}
+
             {justRegistered && (
               <div className="mb-5 flex items-start gap-3 bg-emerald-500/10 border border-emerald-500/30 text-emerald-500 text-sm rounded-xl px-4 py-3">
                 <svg className="w-4 h-4 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -252,7 +200,11 @@ export default function UserLoginPage() {
               />
 
               <div className="flex items-center justify-end mb-7">
-                <button type="button" className="text-sm text-emerald-500 hover:text-emerald-400 transition-colors duration-150">
+                <button
+                  type="button"
+                  onClick={() => navigate("/forgot-password")}
+                  className="text-sm text-emerald-500 hover:text-emerald-400 transition-colors duration-150"
+                >
                   Forgot password?
                 </button>
               </div>

@@ -30,6 +30,31 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: () => '/FinHub/backend/ws/auth/verify-email.php',
       },
+      "/api/auth/forgot-password": {
+        target: "http://localhost",
+        changeOrigin: true,
+        rewrite: () => '/FinHub/backend/ws/auth/forgot-password.php',
+      },
+      "/api/auth/reset-password": {
+        target: "http://localhost",
+        changeOrigin: true,
+        rewrite: () => '/FinHub/backend/ws/auth/reset-password.php',
+      },
+      "/api/auth/admin-forgot-password": {
+        target: "http://localhost",
+        changeOrigin: true,
+        rewrite: () => '/FinHub/backend/ws/auth/admin-forgot-password.php',
+      },
+      "/api/auth/admin-reset-password": {
+        target: "http://localhost",
+        changeOrigin: true,
+        rewrite: () => '/FinHub/backend/ws/auth/admin-reset-password.php',
+      },
+      "/api/auth/sync-timezone": {
+        target: "http://localhost",
+        changeOrigin: true,
+        rewrite: () => '/FinHub/backend/ws/auth/sync-timezone.php',
+      },
       "/api/profile": {
         target: "http://localhost",
         changeOrigin: true,

@@ -62,10 +62,22 @@ class EmailTemplates {
     </html>";
   }
 
-  public static function reminder(array $r): string {
+  public static function reminder(array $r, string $userTimezone = 'UTC'): string {
     $name    = htmlspecialchars($r['bill_name']);
     $amount  = htmlspecialchars($r['currency_symbol'] . number_format((float)$r['amount'], 2));
-    $due     = htmlspecialchars(date('F j, Y', strtotime($r['due_date'])));
+    // Convert stored due_date (assumed UTC) to user's timezone for display
+    try {
+      $dt = DateTime::createFromFormat('Y-m-d H:i:s', $r['due_date'], new DateTimeZone('UTC'));
+      if ($dt === false) {
+        $due = htmlspecialchars($r['due_date']);
+      } else {
+        if (!in_array($userTimezone, DateTimeZone::listIdentifiers(), true)) $userTimezone = 'UTC';
+        $dt->setTimezone(new DateTimeZone($userTimezone));
+        $due = htmlspecialchars($dt->format('F j, Y'));
+      }
+    } catch (Exception $e) {
+      $due = htmlspecialchars(date('F j, Y', strtotime($r['due_date'])));
+    }
     $message = htmlspecialchars($r['message']);
     $days    = (int)$r['days_before'];
     $dayWord = $days === 1 ? 'day' : 'days';
@@ -113,18 +125,36 @@ class EmailTemplates {
     </html>";
   }
 
-  public static function weeklySummary(array $user, array $allBills, array $upcoming): string {
+    public static function weeklySummary(array $user, array $allBills, array $upcoming, string $userTimezone = 'UTC'): string {
     $firstName   = htmlspecialchars($user['first_name']);
-    $date        = date('F j, Y');
+    // Use user's timezone for the summary date
+    try {
+      $tz = in_array($userTimezone, DateTimeZone::listIdentifiers(), true) ? $userTimezone : 'UTC';
+      $date = (new DateTime('now', new DateTimeZone('UTC')))->setTimezone(new DateTimeZone($tz))->format('F j, Y');
+    } catch (Exception $e) {
+      $date = date('F j, Y');
+    }
     $totalBills  = count($allBills);
     $unpaidCount = count(array_filter($allBills, fn($b) => !$b['is_paid']));
 
     $rows = '';
     if (count($upcoming) > 0) {
-        foreach ($upcoming as $b) {
+            foreach ($upcoming as $b) {
             $bName   = htmlspecialchars($b['name']);
             $bAmount = htmlspecialchars($b['currency_symbol'] . number_format((float)$b['amount'], 2));
-            $bDue    = htmlspecialchars(date('M j', strtotime($b['due_date'])));
+            // Convert due_date to user's timezone for display
+            try {
+              $bdt = DateTime::createFromFormat('Y-m-d H:i:s', $b['due_date'], new DateTimeZone('UTC'));
+              if ($bdt === false) {
+                $bDue = htmlspecialchars(date('M j', strtotime($b['due_date'])));
+              } else {
+                if (!in_array($userTimezone, DateTimeZone::listIdentifiers(), true)) $userTimezone = 'UTC';
+                $bdt->setTimezone(new DateTimeZone($userTimezone));
+                $bDue = htmlspecialchars($bdt->format('M j'));
+              }
+            } catch (Exception $e) {
+              $bDue = htmlspecialchars(date('M j', strtotime($b['due_date'])));
+            }
             $rows   .= "<tr>
               <td style='padding:10px 0;border-bottom:1px solid #f1f5f9;color:#0f172a;font-size:13px;'>{$bName}</td>
               <td style='padding:10px 0;border-bottom:1px solid #f1f5f9;color:#0f172a;font-size:13px;font-weight:600;text-align:right;'>{$bAmount}</td>
@@ -183,4 +213,141 @@ class EmailTemplates {
     </html>
     ";
   }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Password reset — sent when the user requests a password reset link.
+  // $resetUrl must be built from a hardcoded APP_URL (never from HTTP_HOST).
+  // ─────────────────────────────────────────────────────────────────────────────
+  public static function passwordReset(string $firstName, string $resetUrl): string {
+    $name = htmlspecialchars($firstName);
+    $url  = htmlspecialchars($resetUrl);
+
+    return "
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset='UTF-8'>
+        <meta name='viewport' content='width=device-width'>
+      </head>
+      <body style='margin:0;padding:32px 16px;background:#f8fafc;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;'>
+        <div style='max-width:520px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);'>
+
+          <div style='background:#16a34a;padding:28px 32px;'>
+            <div style='font-size:20px;font-weight:700;color:#fff;letter-spacing:-0.5px;'>FinHub</div>
+            <div style='font-size:13px;color:#bbf7d0;margin-top:3px;'>Password Reset</div>
+          </div>
+
+          <div style='padding:36px 32px;'>
+            <h2 style='margin:0 0 8px;font-size:20px;color:#0f172a;font-weight:700;'>Reset your password</h2>
+            <p style='margin:0 0 28px;color:#64748b;font-size:14px;line-height:1.6;'>
+              Hi {$name}, we received a request to reset the password for your FinHub account.
+              Click the button below to choose a new password.
+              This link expires in <strong style='color:#0f172a;'>1 hour</strong>.
+            </p>
+
+            <div style='text-align:center;margin-bottom:28px;'>
+              <a href='{$url}'
+                 style='display:inline-block;background:#16a34a;color:#fff;text-decoration:none;
+                        font-size:14px;font-weight:600;padding:14px 32px;border-radius:8px;
+                        letter-spacing:0.01em;'>
+                Reset Password
+              </a>
+            </div>
+
+            <p style='margin:0 0 16px;color:#94a3b8;font-size:12px;line-height:1.6;'>
+              If the button doesn't work, copy and paste this link into your browser:
+            </p>
+            <p style='margin:0 0 24px;font-size:11px;color:#64748b;word-break:break-all;
+                      background:#f8fafc;padding:10px 14px;border-radius:6px;'>
+              {$url}
+            </p>
+
+            <p style='margin:0;color:#94a3b8;font-size:12px;line-height:1.6;'>
+              If you did not request a password reset, you can safely ignore this email —
+              your password will not be changed.
+            </p>
+          </div>
+
+          <div style='padding:14px 32px;background:#f8fafc;border-top:1px solid #f1f5f9;'>
+            <p style='color:#94a3b8;font-size:11px;margin:0;'>Sent from FinHub · noreply@finhubapp.app</p>
+          </div>
+
+        </div>
+      </body>
+    </html>";
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Password reset confirmation — sent immediately after a successful reset.
+  // Serves as a security notification so the user knows their password changed.
+  // ─────────────────────────────────────────────────────────────────────────────
+  public static function passwordResetConfirmation(string $firstName, ?string $whenUtc = null, string $userTimezone = 'UTC'): string {
+    $name = htmlspecialchars($firstName);
+    // When a UTC timestamp is provided, convert it to the user's timezone for display.
+    if ($whenUtc) {
+      try {
+        $dt = DateTime::createFromFormat('Y-m-d H:i:s', $whenUtc, new DateTimeZone('UTC'));
+        if ($dt === false) {
+          $time = htmlspecialchars($whenUtc);
+        } else {
+          // Validate timezone identifier and fall back to UTC if invalid.
+          if (!in_array($userTimezone, DateTimeZone::listIdentifiers(), true)) {
+            $userTimezone = 'UTC';
+          }
+          $dt->setTimezone(new DateTimeZone($userTimezone));
+          $time = $dt->format('F j, Y \a\t g:i A');
+        }
+      } catch (Exception $e) {
+        $time = date('F j, Y \a\t g:i A');
+      }
+    } else {
+      $time = date('F j, Y \a\t g:i A');
+    }
+
+    return "
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset='UTF-8'>
+        <meta name='viewport' content='width=device-width'>
+      </head>
+      <body style='margin:0;padding:32px 16px;background:#f8fafc;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;'>
+        <div style='max-width:520px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);'>
+
+          <div style='background:#16a34a;padding:28px 32px;'>
+            <div style='font-size:20px;font-weight:700;color:#fff;letter-spacing:-0.5px;'>FinHub</div>
+            <div style='font-size:13px;color:#bbf7d0;margin-top:3px;'>Security Notice</div>
+          </div>
+
+          <div style='padding:36px 32px;'>
+            <h2 style='margin:0 0 8px;font-size:20px;color:#0f172a;font-weight:700;'>Password changed</h2>
+            <p style='margin:0 0 20px;color:#64748b;font-size:14px;line-height:1.6;'>
+              Hi {$name}, the password for your FinHub account was successfully changed on
+              <strong style='color:#0f172a;'>{$time}</strong>.
+            </p>
+
+            <div style='background:#fef2f2;border-radius:8px;padding:16px 20px;margin-bottom:24px;'>
+              <p style='margin:0;color:#b91c1c;font-size:13px;line-height:1.6;'>
+                <strong>Didn't make this change?</strong><br>
+                If you did not reset your password, your account may be compromised.
+                Please contact support immediately at
+                <a href='mailto:support@finhubapp.app' style='color:#b91c1c;'>support@finhubapp.app</a>.
+              </p>
+            </div>
+
+            <p style='margin:0;color:#94a3b8;font-size:12px;line-height:1.6;'>
+              For security, you have been signed out of all active sessions.
+              Please sign in again with your new password.
+            </p>
+          </div>
+
+          <div style='padding:14px 32px;background:#f8fafc;border-top:1px solid #f1f5f9;'>
+            <p style='color:#94a3b8;font-size:11px;margin:0;'>Sent from FinHub · noreply@finhubapp.app</p>
+          </div>
+
+        </div>
+      </body>
+    </html>";
+  }
+
 }

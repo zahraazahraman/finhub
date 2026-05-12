@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, useRef } from "react";
 import { setUnauthorizedHandler } from "../utils/api";
+import api from "../utils/api";
 
 const UserContext = createContext(null);
 
@@ -8,18 +9,12 @@ export function UserProvider({ children }) {
     () => JSON.parse(localStorage.getItem("finhub_user")) || null
   );
 
-  // Keep a ref in sync so the 401 handler (registered once on mount)
-  // always reads the current user without needing to re-register.
   const userRef = useRef(user);
   useEffect(() => {
     userRef.current = user;
   }, [user]);
 
   // Register the global 401 handler once on mount.
-  // When any protected endpoint returns 401 (PHP session expired, token gone, etc.),
-  // clear local state and send the user to /login.
-  // The userRef guard prevents this from firing on login failures,
-  // which also return 401 but happen before any user is stored.
   useEffect(() => {
     setUnauthorizedHandler(() => {
       if (!userRef.current) return;
@@ -28,6 +23,26 @@ export function UserProvider({ children }) {
       window.location.href = "/login";
     });
   }, []);
+
+  // Silently sync timezone on mount.
+  // If the user has moved to a different timezone since their last login
+  // (e.g. they travelled), update the stored value so reminder dates stay correct.
+  useEffect(() => {
+    if (!userRef.current) return;
+
+    const detected = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    if (!detected || detected === userRef.current.timezone) return;
+
+    api.post("/auth/sync-timezone", { timezone: detected }).then(({ ok }) => {
+      if (!ok) return;
+      setUser((prev) => {
+        if (!prev) return prev;
+        const next = { ...prev, timezone: detected };
+        localStorage.setItem("finhub_user", JSON.stringify(next));
+        return next;
+      });
+    });
+  }, []); // intentionally empty — run once on mount only
 
   const login = (userData) => {
     setUser(userData);
