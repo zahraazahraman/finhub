@@ -61,9 +61,6 @@ try {
          WHERE user_id = :id"
     )->execute([':token' => $token, ':expires' => $expires, ':id' => (int)$user['user_id']]);
 
-    // Build reset URL from a hardcoded base — NEVER use $_SERVER['HTTP_HOST']
-    // (vulnerable to Host header injection). Set APP_URL in config.php for production.
-    defined('APP_URL') || define('APP_URL', 'http://localhost:5173');
     $resetUrl = APP_URL . '/reset-password?token=' . $token;
 
     Mailer::send(

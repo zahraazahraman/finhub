@@ -10,14 +10,32 @@ if (file_exists($envFile)) {
     }
 }
 
-ini_set('display_errors', 1);
-error_reporting(E_ALL);
+// Frontend origin — used for email links. Never derive this from HTTP_HOST.
+defined('APP_URL') || define('APP_URL', $_ENV['APP_URL'] ?? 'http://localhost:5173');
+
+$isProduction = ($_ENV['APP_ENV'] ?? 'local') === 'production';
+
+// Hide errors in production so stack traces are never exposed publicly.
+ini_set('display_errors', $isProduction ? '0' : '1');
+error_reporting($isProduction ? 0 : E_ALL);
 
 // Ensure PHP uses UTC for all date/time operations to match the database session.
 date_default_timezone_set('UTC');
 
+// Secure session cookies in production (requires HTTPS).
+if ($isProduction) {
+    ini_set('session.cookie_secure',   '1');
+    ini_set('session.cookie_httponly', '1');
+    ini_set('session.cookie_samesite', 'Lax');
+}
+
+// CORS — same origin in production, localhost in development.
+$allowedOrigin = $isProduction
+    ? ($_ENV['APP_URL'] ?? 'https://finhubapp.app')
+    : 'http://localhost:5173';
+
 header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: http://localhost:5173');
+header('Access-Control-Allow-Origin: ' . $allowedOrigin);
 header('Access-Control-Allow-Credentials: true');
 header('Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Authorization');

@@ -56,7 +56,6 @@ try {
          WHERE admin_id = :id"
     )->execute([':token' => $token, ':expires' => $expires, ':id' => (int)$admin['admin_id']]);
 
-    defined('APP_URL') || define('APP_URL', 'http://localhost:5173');
     $resetUrl = APP_URL . '/admin/reset-password?token=' . $token;
 
     // Derive a display name from the email prefix since Admins has no first_name column.

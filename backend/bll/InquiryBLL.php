@@ -5,6 +5,8 @@ require_once __DIR__ . '/../dal/MyNotificationDAL.php';
 require_once __DIR__ . '/../dal/AccountDAL.php';
 require_once __DIR__ . '/../dal/GoalDAL.php';
 require_once __DIR__ . '/../dal/InvestmentDAL.php';
+require_once __DIR__ . '/../services/Mailer.php';
+require_once __DIR__ . '/../services/EmailTemplates.php';
 
 class InquiryBLL {
     private InquiryDAL          $dal;
@@ -178,12 +180,32 @@ class InquiryBLL {
             ? "{$consultant['first_name']} {$consultant['last_name']}"
             : 'the consultant';
 
+        // In-app notification for the user
         $this->notifDal->create(
             $userId,
             'consultant_inquiry',
             'Inquiry Sent',
             "Your inquiry to {$consultantName} has been submitted."
         );
+
+        // Email the consultant so they know without having to check the dashboard
+        if ($consultant && !empty($consultant['email'])) {
+            $userFirstName = $_SESSION['user']['first_name'] ?? '';
+            $userLastName  = $_SESSION['user']['last_name']  ?? '';
+            $html = EmailTemplates::inquiryReceived(
+                $consultant['first_name'],
+                $userFirstName,
+                $userLastName,
+                $situationTag,
+                $brief
+            );
+            Mailer::send(
+                $consultant['email'],
+                $consultantName,
+                'New inquiry on FinHub',
+                $html
+            );
+        }
 
         return ['success' => true, 'inquiry_id' => $inquiryId];
     }

@@ -1,0 +1,58 @@
+Options -Indexes
+AcceptPathInfo On
+RewriteEngine On
+
+# ── Block direct HTTP access to backend internals (bll, dal, config, etc.) ───
+RewriteRule ^backend/(?!ws/) - [F,L]
+
+# ── API: Auth — flat .php files ──────────────────────────────────────────────
+RewriteRule ^api/auth/(.+)$ backend/ws/auth/$1.php [QSA,L]
+
+# ── API: Public endpoints ────────────────────────────────────────────────────
+RewriteRule ^api/public/consultant-apply$ backend/ws/public/consultant-apply.php [QSA,L]
+RewriteRule ^api/public/consultants$      backend/ws/public/consultants.php      [QSA,L]
+
+# ── API: Specific sub-routes (must appear before their parent prefix) ─────────
+RewriteRule ^api/user-consultants/brief$      backend/ws/user-consultants/brief.php     [QSA,L]
+RewriteRule ^api/user-consultants/inquiries$  backend/ws/user-consultants/inquiries.php [QSA,L]
+RewriteRule ^api/user-consultants/reviews$    backend/ws/user-consultants/reviews.php   [QSA,L]
+
+RewriteRule ^api/investments/analyze-single$  backend/ws/investments/analyze-single.php [QSA,L]
+RewriteRule ^api/investments/analyze$         backend/ws/investments/analyze.php        [QSA,L]
+RewriteRule ^api/investments/update-prices$   backend/ws/investments/update-prices.php  [QSA,L]
+
+RewriteRule ^api/reminders/send-due$          backend/ws/reminders/send-due.php         [QSA,L]
+RewriteRule ^api/reminders/weekly-summary$    backend/ws/reminders/weekly-summary.php   [QSA,L]
+
+RewriteRule ^api/transactions/scan-receipt$   backend/ws/transactions/scan-receipt.php  [QSA,L]
+RewriteRule ^api/transactions/import$         backend/ws/transactions/import.php        [QSA,L]
+
+# ── API: Resource endpoints — index.php with optional path segment ────────────
+RewriteRule ^api/profile(/.*)?$                 backend/ws/profile/index.php$1                 [QSA,L]
+RewriteRule ^api/users(/.*)?$                   backend/ws/users/index.php$1                   [QSA,L]
+RewriteRule ^api/user-consultants(/.*)?$        backend/ws/user-consultants/index.php$1        [QSA,L]
+RewriteRule ^api/chat(/.*)?$                    backend/ws/chat/index.php$1                    [QSA,L]
+RewriteRule ^api/consultant-inquiries(/.*)?$    backend/ws/consultant-inquiries/index.php$1    [QSA,L]
+RewriteRule ^api/consultant-profile(/.*)?$      backend/ws/consultant-profile/index.php$1      [QSA,L]
+RewriteRule ^api/consultant-applications(/.*)?$ backend/ws/consultant-applications/index.php$1 [QSA,L]
+RewriteRule ^api/consultants(/.*)?$             backend/ws/consultants/index.php$1             [QSA,L]
+RewriteRule ^api/categories(/.*)?$              backend/ws/categories/index.php$1              [QSA,L]
+RewriteRule ^api/admin-notifications(/.*)?$     backend/ws/admin-notifications/index.php$1     [QSA,L]
+RewriteRule ^api/user-notifications(/.*)?$      backend/ws/user-notifications/index.php$1      [QSA,L]
+RewriteRule ^api/my-notifications(/.*)?$        backend/ws/my-notifications/index.php$1        [QSA,L]
+RewriteRule ^api/user-dashboard(/.*)?$          backend/ws/user-dashboard/index.php$1          [QSA,L]
+RewriteRule ^api/dashboard(/.*)?$               backend/ws/dashboard/index.php$1               [QSA,L]
+RewriteRule ^api/currencies(/.*)?$              backend/ws/currencies/index.php$1              [QSA,L]
+RewriteRule ^api/accounts(/.*)?$                backend/ws/accounts/index.php$1                [QSA,L]
+RewriteRule ^api/exchange-rate(/.*)?$           backend/ws/exchange-rate/index.php$1           [QSA,L]
+RewriteRule ^api/goals(/.*)?$                   backend/ws/goals/index.php$1                   [QSA,L]
+RewriteRule ^api/investments(/.*)?$             backend/ws/investments/index.php$1             [QSA,L]
+RewriteRule ^api/reminders(/.*)?$               backend/ws/reminders/index.php$1               [QSA,L]
+RewriteRule ^api/bills(/.*)?$                   backend/ws/bills/index.php$1                   [QSA,L]
+RewriteRule ^api/transactions(/.*)?$            backend/ws/transactions/index.php$1            [QSA,L]
+
+# ── SPA fallback — all non-file, non-API requests serve index.html ────────────
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_URI}      !^/api/
+RewriteRule ^                   index.html [L]

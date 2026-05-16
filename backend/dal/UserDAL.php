@@ -18,6 +18,16 @@ class UserDAL {
         return $stmt->fetchAll();
     }
 
+    public function getById(int $userId): ?array {
+        $stmt = $this->db->prepare(
+            "SELECT user_id, first_name, last_name, email, timezone
+             FROM Users WHERE user_id = :user_id LIMIT 1"
+        );
+        $stmt->execute([':user_id' => $userId]);
+        $row = $stmt->fetch();
+        return $row ?: null;
+    }
+
     public function updateStatus(int $userId, string $status): bool {
         $stmt = $this->db->prepare(
             "UPDATE Users SET status = :status WHERE user_id = :user_id"

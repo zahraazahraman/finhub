@@ -469,6 +469,133 @@ class EmailTemplates {
   }
 
   // ─────────────────────────────────────────────────────────────────────────────
+  // New inquiry — sent to the consultant when a user submits an inquiry.
+  // ─────────────────────────────────────────────────────────────────────────────
+  public static function inquiryReceived(
+    string $consultantFirstName,
+    string $userFirstName,
+    string $userLastName,
+    string $situationTag,
+    string $briefSnippet
+  ): string {
+    $cName   = htmlspecialchars($consultantFirstName);
+    $uName   = htmlspecialchars("{$userFirstName} {$userLastName}");
+    $tag     = $situationTag !== '' ? htmlspecialchars($situationTag) : null;
+    $snippet = $briefSnippet !== '' ? htmlspecialchars(mb_substr($briefSnippet, 0, 300)) : null;
+
+    $tagHtml = $tag
+      ? "<span style='display:inline-block;background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d;
+                      font-size:12px;font-weight:600;padding:3px 10px;border-radius:20px;
+                      margin-bottom:16px;'>{$tag}</span><br>"
+      : '';
+
+    $snippetHtml = $snippet
+      ? "<div style='background:#f8fafc;border-left:3px solid #16a34a;border-radius:0 6px 6px 0;
+                     padding:12px 16px;margin-top:16px;'>
+           <p style='margin:0;color:#0f172a;font-size:13px;line-height:1.6;font-style:italic;'>&ldquo;{$snippet}&rdquo;</p>
+         </div>"
+      : '';
+
+    return "
+    <!DOCTYPE html>
+    <html>
+      <head><meta charset='UTF-8'><meta name='viewport' content='width=device-width'></head>
+      <body style='margin:0;padding:32px 16px;background:#f8fafc;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;'>
+        <div style='max-width:520px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);'>
+
+          <div style='background:#16a34a;padding:28px 32px;'>
+            <div style='font-size:20px;font-weight:700;color:#fff;letter-spacing:-0.5px;'>FinHub</div>
+            <div style='font-size:13px;color:#bbf7d0;margin-top:3px;'>Consultant Portal</div>
+          </div>
+
+          <div style='padding:36px 32px;'>
+            <h2 style='margin:0 0 8px;font-size:20px;color:#0f172a;font-weight:700;'>New inquiry, {$cName}!</h2>
+            <p style='margin:0 0 20px;color:#64748b;font-size:14px;line-height:1.6;'>
+              <strong style='color:#0f172a;'>{$uName}</strong> has sent you a consultation inquiry through FinHub.
+            </p>
+            {$tagHtml}
+            {$snippetHtml}
+            <div style='text-align:center;margin-top:24px;'>
+              <a href='" . APP_URL . "/consultant/login'
+                 style='display:inline-block;background:#16a34a;color:#fff;text-decoration:none;
+                        font-size:14px;font-weight:600;padding:13px 28px;border-radius:8px;'>
+                Open Consultant Dashboard
+              </a>
+            </div>
+          </div>
+
+          <div style='padding:14px 32px;background:#f8fafc;border-top:1px solid #f1f5f9;'>
+            <p style='color:#94a3b8;font-size:11px;margin:0;'>Sent from FinHub · noreply@finhubapp.app</p>
+          </div>
+
+        </div>
+      </body>
+    </html>";
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Inquiry replied — sent to the user when a consultant replies.
+  // ─────────────────────────────────────────────────────────────────────────────
+  public static function inquiryReplied(
+    string $userFirstName,
+    string $consultantFirstName,
+    string $consultantLastName,
+    string $specialization,
+    string $replySnippet
+  ): string {
+    $uName   = htmlspecialchars($userFirstName);
+    $cName   = htmlspecialchars("{$consultantFirstName} {$consultantLastName}");
+    $spec    = htmlspecialchars($specialization);
+    $snippet = $replySnippet !== '' ? htmlspecialchars(mb_substr($replySnippet, 0, 300)) : null;
+
+    $snippetHtml = $snippet
+      ? "<div style='background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:16px 20px;margin:20px 0;'>
+           <p style='margin:0 0 6px;color:#15803d;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;'>Reply preview</p>
+           <p style='margin:0;color:#0f172a;font-size:13px;line-height:1.6;font-style:italic;'>&ldquo;{$snippet}&rdquo;</p>
+         </div>"
+      : '<div style="height:16px;"></div>';
+
+    return "
+    <!DOCTYPE html>
+    <html>
+      <head><meta charset='UTF-8'><meta name='viewport' content='width=device-width'></head>
+      <body style='margin:0;padding:32px 16px;background:#f8fafc;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;'>
+        <div style='max-width:520px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);'>
+
+          <div style='background:#16a34a;padding:28px 32px;'>
+            <div style='font-size:20px;font-weight:700;color:#fff;letter-spacing:-0.5px;'>FinHub</div>
+            <div style='font-size:13px;color:#bbf7d0;margin-top:3px;'>Consultant Network</div>
+          </div>
+
+          <div style='padding:36px 32px;'>
+            <h2 style='margin:0 0 8px;font-size:20px;color:#0f172a;font-weight:700;'>Your consultant replied!</h2>
+            <p style='margin:0 0 4px;color:#64748b;font-size:14px;line-height:1.6;'>
+              Hi {$uName}, <strong style='color:#0f172a;'>{$cName}</strong>
+              ({$spec}) has responded to your inquiry.
+            </p>
+            {$snippetHtml}
+            <p style='margin:0 0 20px;color:#64748b;font-size:13px;line-height:1.6;'>
+              Open FinHub and go to <strong style='color:#0f172a;'>Consultants → My Inquiries</strong> to read the full reply.
+            </p>
+            <div style='text-align:center;'>
+              <a href='" . APP_URL . "/consultants'
+                 style='display:inline-block;background:#16a34a;color:#fff;text-decoration:none;
+                        font-size:14px;font-weight:600;padding:13px 28px;border-radius:8px;'>
+                Read Reply on FinHub
+              </a>
+            </div>
+          </div>
+
+          <div style='padding:14px 32px;background:#f8fafc;border-top:1px solid #f1f5f9;'>
+            <p style='color:#94a3b8;font-size:11px;margin:0;'>Sent from FinHub · noreply@finhubapp.app</p>
+          </div>
+
+        </div>
+      </body>
+    </html>";
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
   // Consultant application confirmation — sent to the applicant immediately
   // after a successful submission.
   // ─────────────────────────────────────────────────────────────────────────────
