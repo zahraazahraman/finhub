@@ -9,17 +9,19 @@ export const USER_STATUS_STYLES = {
 
 // Notification types
 export const NOTIFICATION_TYPES = {
-  bill:    "warning",
-  goal:    "success",
-  insight: "info",
-  system:  "default",
+  bill:               "warning",
+  goal:               "success",
+  insight:            "info",
+  consultant_inquiry: "info",
+  system:             "default",
 };
 
 export const NOTIFICATION_TYPE_LABELS = {
-  bill:    "Bill",
-  goal:    "Goal",
-  insight: "Insight",
-  system:  "System",
+  bill:               "Bill",
+  goal:               "Goal",
+  insight:            "Insight",
+  consultant_inquiry: "Consultant",
+  system:             "System",
 };
 
 // Admin notification types

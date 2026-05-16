@@ -85,4 +85,20 @@ class AuthMiddleware {
     public static function isUser(): bool {
         return !empty($_SESSION['user']);
     }
+
+    public static function requireConsultant(): void {
+        if (empty($_SESSION['consultant'])) {
+            http_response_code(401);
+            echo json_encode(['success' => false, 'message' => 'Unauthorized']);
+            exit;
+        }
+    }
+
+    public static function getConsultant(): array {
+        return $_SESSION['consultant'];
+    }
+
+    public static function isConsultant(): bool {
+        return !empty($_SESSION['consultant']);
+    }
 }

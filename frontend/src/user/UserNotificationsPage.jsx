@@ -9,14 +9,15 @@ import {
 } from "../utils/constants.js";
 import { formatDateTime } from "../utils/formatters.js";
 
-const FILTERS = ["all", "bill", "goal", "insight", "system"];
+const FILTERS = ["all", "bill", "goal", "insight", "consultant_inquiry", "system"];
 
 const FILTER_LABELS = {
-  all:     "All",
-  bill:    "Bills",
-  goal:    "Goals",
-  insight: "Insights",
-  system:  "System",
+  all:                "All",
+  bill:               "Bills",
+  goal:               "Goals",
+  insight:            "Insights",
+  consultant_inquiry: "Consultants",
+  system:             "System",
 };
 
 export default function UserNotificationsPage() {

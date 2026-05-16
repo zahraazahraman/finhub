@@ -15,6 +15,12 @@ $body   = json_decode(file_get_contents('php://input'), true);
 $email  = trim($body['email']  ?? '');
 $action = trim($body['action'] ?? 'verify'); // 'verify' | 'resend'
 
+// Accept the device timezone so the auto-login session matches what user-login.php stores.
+$timezone = trim($body['timezone'] ?? 'UTC');
+if (!in_array($timezone, timezone_identifiers_list(), true)) {
+    $timezone = 'UTC';
+}
+
 if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
     http_response_code(400);
     echo json_encode(['success' => false, 'message' => 'A valid email address is required.']);
@@ -47,11 +53,9 @@ try {
     // ── RESEND ──────────────────────────────────────────────────────────────
     if ($action === 'resend') {
         // Rate limit: allow resend only if the current code was issued > 60s ago.
-        // A code expires 15 min after issue, so if expires_at > NOW() + 14 min,
-        // it means it was generated less than 60 seconds ago.
         if (!empty($user['verification_code_expires_at'])) {
-            $expiresAt    = strtotime($user['verification_code_expires_at']);
-            $secondsLeft  = $expiresAt - time();
+            $expiresAt   = strtotime($user['verification_code_expires_at']);
+            $secondsLeft = $expiresAt - time();
             if ($secondsLeft > (14 * 60)) {
                 $waitSeconds = $secondsLeft - (14 * 60);
                 http_response_code(429);
@@ -92,7 +96,6 @@ try {
         exit;
     }
 
-    // Check expiry
     if (empty($user['verification_code_expires_at']) ||
         strtotime($user['verification_code_expires_at']) < time()) {
         http_response_code(400);
@@ -100,33 +103,57 @@ try {
         exit;
     }
 
-    // Check code match
     if ($user['verification_code'] !== $code) {
         http_response_code(400);
         echo json_encode(['success' => false, 'message' => 'Incorrect code. Please try again.']);
         exit;
     }
 
-    // ── Mark verified and clear code columns ──
+    // ── Mark verified, clear code columns, store detected timezone ──
     $db->prepare(
         "UPDATE Users
          SET email_verified = 1,
              verification_code = NULL,
-             verification_code_expires_at = NULL
+             verification_code_expires_at = NULL,
+             timezone = :tz
          WHERE user_id = :id"
-    )->execute([':id' => (int)$user['user_id']]);
+    )->execute([':tz' => $timezone, ':id' => (int)$user['user_id']]);
 
-    // ── Auto-login: set session so the user lands directly on the dashboard ──
+    // ── Auto-login: set session (same shape as user-login.php) ──
     $_SESSION['user'] = [
         'user_id'                => $user['user_id'],
         'first_name'             => $user['first_name'],
         'last_name'              => $user['last_name'],
         'email'                  => $user['email'],
-        'preferred_currency_id'  => (int)($user['preferred_currency_id'] ?? 1),
-        'ai_tone'                => $user['ai_tone'] ?? 'professional',
-        'ai_data_sharing'        => (int)($user['ai_data_sharing'] ?? 1),
-        'weekly_summary_enabled' => (int)($user['weekly_summary_enabled'] ?? 1),
+        'preferred_currency_id'  => (int) ($user['preferred_currency_id'] ?? 1),
+        'ai_tone'                => $user['ai_tone']               ?? 'professional',
+        'ai_data_sharing'        => (int) ($user['ai_data_sharing']        ?? 1),
+        'weekly_summary_enabled' => (int) ($user['weekly_summary_enabled'] ?? 1),
+        'timezone'               => $timezone,
     ];
+
+    // ── Persistent session token (30 days) — same as user-login.php ──
+    $token   = bin2hex(random_bytes(32));
+    $expires = date('Y-m-d H:i:s', strtotime('+30 days'));
+
+    $db->prepare("DELETE FROM UserSessions WHERE user_id = :id")
+       ->execute([':id' => (int) $user['user_id']]);
+
+    $db->prepare(
+        "INSERT INTO UserSessions (user_id, session_token, expires_at)
+         VALUES (:user_id, :token, :expires)"
+    )->execute([
+        ':user_id' => (int) $user['user_id'],
+        ':token'   => $token,
+        ':expires' => $expires,
+    ]);
+
+    setcookie('finhub_token', $token, [
+        'expires'  => time() + (30 * 24 * 60 * 60),
+        'path'     => '/',
+        'httponly' => true,
+        'samesite' => 'Lax',
+    ]);
 
     echo json_encode([
         'success' => true,

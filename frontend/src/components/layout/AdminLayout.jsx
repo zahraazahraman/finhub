@@ -76,6 +76,21 @@ const navItems = [
     ),
   },
   {
+    path: "/admin/consultant-applications",
+    label: "Applications",
+    icon: (
+      <svg
+        className="w-5 h-5"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        viewBox="0 0 24 24"
+      >
+        <path d="M9 12h6M9 16h6M9 8h6M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" />
+      </svg>
+    ),
+  },
+  {
     path: "/admin/categories",
     label: "Categories",
     icon: (

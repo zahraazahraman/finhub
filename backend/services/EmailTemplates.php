@@ -350,4 +350,174 @@ class EmailTemplates {
     </html>";
   }
 
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Application approved — sent when admin approves; includes temp password.
+  // ─────────────────────────────────────────────────────────────────────────────
+  public static function applicationApproved(string $firstName, string $email, string $tempPassword): string {
+    $name  = htmlspecialchars($firstName);
+    $em    = htmlspecialchars($email);
+    $pw    = htmlspecialchars($tempPassword);
+
+    return "
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset='UTF-8'>
+        <meta name='viewport' content='width=device-width'>
+      </head>
+      <body style='margin:0;padding:32px 16px;background:#f8fafc;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;'>
+        <div style='max-width:520px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);'>
+
+          <div style='background:#16a34a;padding:28px 32px;'>
+            <div style='font-size:20px;font-weight:700;color:#fff;letter-spacing:-0.5px;'>FinHub</div>
+            <div style='font-size:13px;color:#bbf7d0;margin-top:3px;'>Consultant Network</div>
+          </div>
+
+          <div style='padding:36px 32px;'>
+            <h2 style='margin:0 0 8px;font-size:20px;color:#0f172a;font-weight:700;'>Welcome aboard, {$name}!</h2>
+            <p style='margin:0 0 20px;color:#64748b;font-size:14px;line-height:1.6;'>
+              Your application to join the FinHub Consultant Network has been <strong style='color:#16a34a;'>approved</strong>.
+              Your consultant account is now active. Use the credentials below to sign in for the first time.
+            </p>
+
+            <div style='background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:20px 24px;margin-bottom:24px;'>
+              <table cellpadding='0' cellspacing='0' width='100%'>
+                <tr>
+                  <td style='color:#64748b;font-size:13px;padding-bottom:10px;width:40%;'>Email</td>
+                  <td style='color:#0f172a;font-size:13px;font-weight:600;padding-bottom:10px;'>{$em}</td>
+                </tr>
+                <tr>
+                  <td style='color:#64748b;font-size:13px;'>Temporary password</td>
+                  <td style='color:#0f172a;font-size:13px;font-weight:700;letter-spacing:0.05em;'>{$pw}</td>
+                </tr>
+              </table>
+            </div>
+
+            <div style='background:#fefce8;border:1px solid #fde68a;border-radius:8px;padding:14px 18px;margin-bottom:24px;'>
+              <p style='margin:0;color:#92400e;font-size:12px;line-height:1.6;'>
+                <strong>Important:</strong> You will be prompted to set a new password on your first login. Please change it immediately.
+              </p>
+            </div>
+
+            <p style='margin:0;color:#94a3b8;font-size:12px;line-height:1.6;'>
+              Questions? Reach us at <a href='mailto:support@finhubapp.app' style='color:#16a34a;'>support@finhubapp.app</a>.
+            </p>
+          </div>
+
+          <div style='padding:14px 32px;background:#f8fafc;border-top:1px solid #f1f5f9;'>
+            <p style='color:#94a3b8;font-size:11px;margin:0;'>Sent from FinHub · noreply@finhubapp.app</p>
+          </div>
+
+        </div>
+      </body>
+    </html>";
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Application rejected — sent when admin rejects; includes optional note.
+  // ─────────────────────────────────────────────────────────────────────────────
+  public static function applicationRejected(string $firstName, ?string $adminNote = null): string {
+    $name    = htmlspecialchars($firstName);
+    $noteHtml = '';
+    if (!empty(trim((string)$adminNote))) {
+      $noteHtml = "
+        <div style='background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:14px 18px;margin-bottom:24px;'>
+          <p style='margin:0 0 4px;color:#b91c1c;font-size:12px;font-weight:600;'>Reviewer note</p>
+          <p style='margin:0;color:#7f1d1d;font-size:13px;line-height:1.6;'>" . htmlspecialchars($adminNote) . "</p>
+        </div>";
+    }
+
+    return "
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset='UTF-8'>
+        <meta name='viewport' content='width=device-width'>
+      </head>
+      <body style='margin:0;padding:32px 16px;background:#f8fafc;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;'>
+        <div style='max-width:520px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);'>
+
+          <div style='background:#16a34a;padding:28px 32px;'>
+            <div style='font-size:20px;font-weight:700;color:#fff;letter-spacing:-0.5px;'>FinHub</div>
+            <div style='font-size:13px;color:#bbf7d0;margin-top:3px;'>Consultant Network</div>
+          </div>
+
+          <div style='padding:36px 32px;'>
+            <h2 style='margin:0 0 8px;font-size:20px;color:#0f172a;font-weight:700;'>Application update</h2>
+            <p style='margin:0 0 20px;color:#64748b;font-size:14px;line-height:1.6;'>
+              Hi {$name}, thank you for your interest in joining the FinHub Consultant Network.
+              After careful review, we are unable to move forward with your application at this time.
+            </p>
+
+            {$noteHtml}
+
+            <p style='margin:0 0 16px;color:#64748b;font-size:14px;line-height:1.6;'>
+              We encourage you to reapply in the future as your experience grows.
+            </p>
+            <p style='margin:0;color:#94a3b8;font-size:12px;line-height:1.6;'>
+              Questions? Reach us at <a href='mailto:support@finhubapp.app' style='color:#16a34a;'>support@finhubapp.app</a>.
+            </p>
+          </div>
+
+          <div style='padding:14px 32px;background:#f8fafc;border-top:1px solid #f1f5f9;'>
+            <p style='color:#94a3b8;font-size:11px;margin:0;'>Sent from FinHub · noreply@finhubapp.app</p>
+          </div>
+
+        </div>
+      </body>
+    </html>";
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Consultant application confirmation — sent to the applicant immediately
+  // after a successful submission.
+  // ─────────────────────────────────────────────────────────────────────────────
+  public static function applicationConfirmation(string $firstName): string {
+    $name = htmlspecialchars($firstName);
+
+    return "
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset='UTF-8'>
+        <meta name='viewport' content='width=device-width'>
+      </head>
+      <body style='margin:0;padding:32px 16px;background:#f8fafc;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;'>
+        <div style='max-width:520px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);'>
+
+          <div style='background:#16a34a;padding:28px 32px;'>
+            <div style='font-size:20px;font-weight:700;color:#fff;letter-spacing:-0.5px;'>FinHub</div>
+            <div style='font-size:13px;color:#bbf7d0;margin-top:3px;'>Consultant Network</div>
+          </div>
+
+          <div style='padding:36px 32px;'>
+            <h2 style='margin:0 0 8px;font-size:20px;color:#0f172a;font-weight:700;'>Application received!</h2>
+            <p style='margin:0 0 20px;color:#64748b;font-size:14px;line-height:1.6;'>
+              Hi {$name}, thank you for applying to join the FinHub Consultant Network.
+              We've received your application and our team will review it shortly.
+            </p>
+
+            <div style='background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:16px 20px;margin-bottom:24px;'>
+              <p style='margin:0;color:#15803d;font-size:13px;line-height:1.6;'>
+                <strong>What happens next?</strong><br>
+                Our team typically reviews applications within 3–5 business days.
+                You will receive an email once a decision has been made.
+              </p>
+            </div>
+
+            <p style='margin:0;color:#94a3b8;font-size:12px;line-height:1.6;'>
+              If you have any questions, feel free to reach out at
+              <a href='mailto:support@finhubapp.app' style='color:#16a34a;'>support@finhubapp.app</a>.
+            </p>
+          </div>
+
+          <div style='padding:14px 32px;background:#f8fafc;border-top:1px solid #f1f5f9;'>
+            <p style='color:#94a3b8;font-size:11px;margin:0;'>Sent from FinHub · noreply@finhubapp.app</p>
+          </div>
+
+        </div>
+      </body>
+    </html>";
+  }
+
 }

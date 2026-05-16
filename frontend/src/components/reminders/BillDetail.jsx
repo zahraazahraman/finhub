@@ -165,8 +165,8 @@ export default function BillDetail({
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Badge variant={r.is_sent ? "success" : "warning"} size="sm">
-                    {r.is_sent ? "Sent" : "Pending"}
+                  <Badge variant={Number(r.is_sent) === 1 ? "success" : "warning"} size="sm">
+                    {Number(r.is_sent) === 1 ? "Sent" : "Pending"}
                   </Badge>
                   <button
                     onClick={() => onDeleteReminder(r)}

@@ -1,6 +1,17 @@
+// MySQL returns datetimes as "YYYY-MM-DD HH:MM:SS" with no timezone marker.
+// Appending "Z" after normalising the separator makes the browser treat the
+// value as UTC, so toLocale* methods then convert to the user's local time.
+const parseUtc = (dateStr) => {
+  if (!dateStr) return null;
+  const s = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}/.test(dateStr)
+    ? dateStr.replace(" ", "T") + "Z"
+    : dateStr;
+  return new Date(s);
+};
+
 export const formatDate = (dateStr, options = {}) => {
   if (!dateStr) return "—";
-  return new Date(dateStr).toLocaleDateString("en-US", {
+  return parseUtc(dateStr).toLocaleDateString("en-US", {
     year: "numeric",
     month: "short",
     day: "numeric",
@@ -10,7 +21,7 @@ export const formatDate = (dateStr, options = {}) => {
 
 export const formatDateTime = (dateStr) => {
   if (!dateStr) return "—";
-  return new Date(dateStr).toLocaleDateString("en-US", {
+  return parseUtc(dateStr).toLocaleDateString("en-US", {
     year: "numeric",
     month: "short",
     day: "numeric",

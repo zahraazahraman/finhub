@@ -1,6 +1,9 @@
 import { useState } from "react";
 import AIChatPanel from "../components/consultants/AIChatPanel.jsx";
 import ConsultantsList from "../components/consultants/ConsultantsList.jsx";
+import ConsultantProfileDrawer from "../components/consultants/ConsultantProfileDrawer.jsx";
+import InquiryModal from "../components/consultants/InquiryModal.jsx";
+import MyInquiries from "../components/consultants/MyInquiries.jsx";
 
 const TABS = [
   {
@@ -21,10 +24,22 @@ const TABS = [
       </svg>
     ),
   },
+  {
+    id:    "inquiries",
+    label: "My Inquiries",
+    icon: (
+      <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+      </svg>
+    ),
+  },
 ];
 
 export default function UserConsultants() {
-  const [activeTab, setActiveTab] = useState("ai");
+  const [activeTab,     setActiveTab]     = useState("ai");
+  const [activeProfile, setActiveProfile] = useState(null);
+  const [needsState,    setNeedsState]    = useState({ done: false, situation: "", matchedIds: [] });
+  const [inquiryTarget, setInquiryTarget] = useState(null);
 
   return (
     <div className="animate-fade-in flex flex-col gap-6">
@@ -58,8 +73,43 @@ export default function UserConsultants() {
       </div>
 
       {/* ── Tab content ── */}
-      {activeTab === "ai"    && <AIChatPanel />}
-      {activeTab === "human" && <ConsultantsList />}
+      {activeTab === "ai"        && <AIChatPanel />}
+      {activeTab === "inquiries" && <MyInquiries />}
+      {activeTab === "human" && (
+        <ConsultantsList
+          onSelect={(consultant) => setActiveProfile(consultant)}
+          needsState={needsState}
+          onNeedsMatch={(situation, matchedIds) =>
+            setNeedsState({ done: true, situation, matchedIds })
+          }
+          onNeedsReset={() =>
+            setNeedsState({ done: false, situation: "", matchedIds: [] })
+          }
+        />
+      )}
+
+      {/* ── Profile drawer — rendered outside tab flow so it overlays everything ── */}
+      {activeProfile && (
+        <ConsultantProfileDrawer
+          profile={activeProfile}
+          onClose={() => setActiveProfile(null)}
+          onProfileLoad={(full) => setActiveProfile(full)}
+          onConnect={() => setInquiryTarget(activeProfile)}
+        />
+      )}
+
+      {/* ── Inquiry modal — z-50, overlays the drawer (z-[46]) ── */}
+      {inquiryTarget && (
+        <InquiryModal
+          consultant={inquiryTarget}
+          situationTag={needsState.situation}
+          onClose={() => setInquiryTarget(null)}
+          onSuccess={() => {
+            setInquiryTarget(null);
+            setActiveProfile(null);
+          }}
+        />
+      )}
     </div>
   );
 }

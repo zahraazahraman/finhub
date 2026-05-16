@@ -59,6 +59,31 @@ class ConsultantDAL {
         return $stmt->execute([':id' => $id]);
     }
 
+    // Creates a consultant row from an approved application, including the
+    // hashed temporary password and a back-reference to the application.
+    public function createFromApplication(array $data): int {
+        $stmt = $this->db->prepare(
+            "INSERT INTO Consultants
+                (first_name, last_name, email, phone, specialization,
+                 years_experience, bio, password, must_change_password, application_id)
+             VALUES
+                (:first_name, :last_name, :email, :phone, :specialization,
+                 :years_experience, :bio, :password, 1, :application_id)"
+        );
+        $stmt->execute([
+            ':first_name'       => $data['first_name'],
+            ':last_name'        => $data['last_name'],
+            ':email'            => $data['email'],
+            ':phone'            => $data['phone'] ?: null,
+            ':specialization'   => $data['specialization'],
+            ':years_experience' => (int)($data['years_experience'] ?? 0),
+            ':bio'              => $data['bio'] ?: null,
+            ':password'         => $data['password'],
+            ':application_id'   => $data['application_id'],
+        ]);
+        return (int)$this->db->lastInsertId();
+    }
+
     public function emailExists(string $email, int $excludeId = 0): bool {
         $stmt = $this->db->prepare(
             "SELECT COUNT(*) FROM Consultants 

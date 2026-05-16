@@ -24,13 +24,15 @@ switch ($method) {
 
     case 'POST':
         $billId = (int)($data['bill_id'] ?? 0);
-        echo json_encode($bll->addReminder($userId, $billId, $data));
+        // Pass $user so addReminder can compare reminder dates against
+        // the user's local midnight instead of the server timezone.
+        echo json_encode($bll->addReminder($userId, $billId, $data, $user));
         break;
 
     case 'PATCH':
-        // Update a reminder
         $reminderId = (int)($_GET['id'] ?? ($data['reminder_id'] ?? 0));
-        echo json_encode($bll->updateReminder($userId, $reminderId, $data));
+        // Pass $user for the same timezone-aware "in the past" check.
+        echo json_encode($bll->updateReminder($userId, $reminderId, $data, $user));
         break;
 
     case 'DELETE':

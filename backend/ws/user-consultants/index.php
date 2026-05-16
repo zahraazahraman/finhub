@@ -17,7 +17,29 @@ if ($method === 'GET') {
         exit;
     }
 
-    // Optional ?specialization=Investment filter
+    if ($action === 'getOne') {
+        $id = (int)($_GET['id'] ?? 0);
+        if ($id <= 0) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => 'Invalid consultant id.']);
+            exit;
+        }
+        echo json_encode($bll->getOne($id));
+        exit;
+    }
+
+    if ($action === 'matchByNeed') {
+        $need = trim($_GET['need'] ?? '');
+        if ($need === '') {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => 'need parameter is required.']);
+            exit;
+        }
+        echo json_encode($bll->matchByNeed($need));
+        exit;
+    }
+
+    // Default: list all with optional ?specialization= filter
     $specialization = isset($_GET['specialization']) && $_GET['specialization'] !== ''
         ? $_GET['specialization']
         : null;
