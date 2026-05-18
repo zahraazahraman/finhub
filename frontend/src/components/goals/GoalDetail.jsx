@@ -94,7 +94,7 @@ export default function GoalDetail({
     <div className="animate-fade-in">
 
       {/* ── Top bar ── */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
         <button
           onClick={onBack}
           className="flex items-center gap-2 text-skin-text-secondary hover:text-skin-text transition-colors duration-150 text-sm font-medium"
@@ -105,7 +105,7 @@ export default function GoalDetail({
           Back to Goals
         </button>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center flex-wrap justify-end gap-2">
           {!isCompleted && (
             <Button
               variant="primary"

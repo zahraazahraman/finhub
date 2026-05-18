@@ -202,7 +202,7 @@ export default function InvestmentDetail({
     <div className="animate-fade-in">
 
       {/* ── Header ── */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
         <div className="flex items-center gap-3">
           <button
             onClick={onBack}
@@ -240,7 +240,7 @@ export default function InvestmentDetail({
         </div>
 
         {/* ── Action buttons ── */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center flex-wrap justify-end gap-2">
           <Button
             variant="secondary"
             size="sm"

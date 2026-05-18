@@ -76,7 +76,7 @@ export default function AccountDetail({ account, transactions, loading, onBack, 
   return (
     <div>
       {/* ── Header ── */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
         <div className="flex items-center gap-3">
           <button
             onClick={onBack}
@@ -92,7 +92,7 @@ export default function AccountDetail({ account, transactions, loading, onBack, 
             <p className="text-skin-text-muted text-sm">{account.currency_code}</p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center flex-wrap justify-end gap-2">
           <Button
             variant="danger"
             size="sm"
