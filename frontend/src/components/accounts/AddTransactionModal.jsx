@@ -4,6 +4,7 @@ import Input from "../ui/Input.jsx";
 import Select from "../ui/Select.jsx";
 import TransactionsBLL from "../../bll/TransactionsBLL.js";
 import CategoriesBLL from "../../bll/CategoriesBLL.js";
+import api from "../../utils/api.js";
 
 const TRANSACTION_TYPE_OPTIONS = [
   { value: "",         label: "Select type..."  },
@@ -20,10 +21,18 @@ export default function AddTransactionModal({ account, receiptData, onClose, onC
     description:      receiptData?.description  ?? "",
     transaction_date: receiptData?.date         ?? new Date().toISOString().split("T")[0],
   });
-  const [categories, setCategories]   = useState([]);
-  const [errors, setErrors]           = useState({});
-  const [serverError, setServerError] = useState("");
-  const [saving, setSaving]           = useState(false);
+  const [categories, setCategories]       = useState([]);
+  const [errors, setErrors]               = useState({});
+  const [serverError, setServerError]     = useState("");
+  const [saving, setSaving]               = useState(false);
+  const [conversionInfo, setConversionInfo]   = useState(null);
+  const [conversionLoading, setConversionLoading] = useState(false);
+  const [conversionFailed, setConversionFailed]   = useState(false);
+
+  const isCrossCurrency =
+    receiptData?.currency &&
+    account?.currency_code &&
+    receiptData.currency.toUpperCase() !== account.currency_code.toUpperCase();
 
   useEffect(() => {
     const load = async () => {
@@ -35,13 +44,43 @@ export default function AddTransactionModal({ account, receiptData, onClose, onC
 
   useEffect(() => {
     if (!receiptData?.category || categories.length === 0) return;
+    const type  = receiptData?.amount ? "expense" : "";
     const match = categories.find(
-      (c) => c.name.toLowerCase() === receiptData.category.toLowerCase()
+      (c) =>
+        c.name.toLowerCase() === receiptData.category.toLowerCase() &&
+        (!type || c.type === type)
     );
     if (match) {
       setForm((prev) => ({ ...prev, category_id: match.category_id }));
     }
   }, [categories, receiptData]);
+
+  useEffect(() => {
+    if (!isCrossCurrency || !receiptData?.amount) return;
+    const from = receiptData.currency.toUpperCase();
+    const to   = account.currency_code.toUpperCase();
+    const fetchRate = async () => {
+      setConversionLoading(true);
+      const { ok, data } = await api.get(
+        `/exchange-rate?from=${from}&to=${to}&amount=${receiptData.amount}`
+      );
+      setConversionLoading(false);
+      if (ok && data.success) {
+        setConversionInfo({
+          originalAmount:   receiptData.amount,
+          originalCurrency: from,
+          convertedAmount:  data.converted_amount,
+          accountCurrency:  to,
+          rate:             data.rate,
+        });
+        setForm((prev) => ({ ...prev, amount: data.converted_amount }));
+      } else {
+        setConversionFailed(true);
+      }
+    };
+    fetchRate();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
 
   const filteredCategories = categories.filter(
@@ -139,6 +178,28 @@ export default function AddTransactionModal({ account, receiptData, onClose, onC
           onChange={handleChange("amount")}
           error={errors.amount}
         />
+        {conversionLoading && (
+          <p className="text-xs text-skin-text-muted -mt-2">
+            Converting from {receiptData.currency.toUpperCase()}...
+          </p>
+        )}
+        {conversionInfo && (
+          <p className="text-xs text-skin-text-muted -mt-2">
+            Receipt: {conversionInfo.originalAmount} {conversionInfo.originalCurrency} → {conversionInfo.convertedAmount} {conversionInfo.accountCurrency}
+          </p>
+        )}
+        {conversionFailed && (
+          <div className="flex items-start gap-2 bg-amber-500/10 border border-amber-500/20 rounded-xl px-4 py-3 -mt-2">
+            <svg className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+              <line x1="12" y1="9" x2="12" y2="13" />
+              <line x1="12" y1="17" x2="12.01" y2="17" />
+            </svg>
+            <p className="text-amber-500 text-xs">
+              Receipt was in {receiptData.currency.toUpperCase()} but this account uses {account.currency_code.toUpperCase()}. Could not fetch exchange rate — please enter the correct amount manually.
+            </p>
+          </div>
+        )}
         <div className="mb-4">
           <label className="block text-sm font-medium text-skin-text-secondary mb-1.5">
             Category

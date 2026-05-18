@@ -44,10 +44,10 @@ export default class TransactionsBLL {
   }
 
   static async scanReceipt(image) {
-    const allowed = ["jpg", "jpeg", "png", "webp"];
+    const allowed = ["jpg", "jpeg", "png", "webp", "heic"];
     const ext = image.name.split(".").pop().toLowerCase();
     if (!allowed.includes(ext))
-      return { success: false, error: "Only JPG, PNG, and WEBP images are allowed." };
+      return { success: false, error: "Only JPG, PNG, WEBP, and HEIC images are allowed." };
 
     const { ok, data } = await TransactionsDAL.scanReceipt(image);
     if (ok && data.success) return { success: true, data: data.data };

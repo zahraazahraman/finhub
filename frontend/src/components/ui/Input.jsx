@@ -39,7 +39,7 @@ export default function Input({
           onChange={onChange}
           placeholder={placeholder}
           className={`
-            w-full bg-skin-input border rounded-xl py-3 text-skin-text
+            w-full min-w-0 appearance-none bg-skin-input border rounded-xl py-3 text-skin-text
             placeholder-skin-text-muted text-sm
             focus:outline-none focus:ring-2 transition-all duration-150
             ${icon ? "pl-10" : "pl-4"}

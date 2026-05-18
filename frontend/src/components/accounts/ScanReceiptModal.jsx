@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import Modal from "../ui/Modal.jsx";
 import Button from "../ui/Button.jsx";
 import TransactionsBLL from "../../bll/TransactionsBLL.js";
@@ -6,12 +6,13 @@ import TransactionsBLL from "../../bll/TransactionsBLL.js";
 const isMobile = () => window.matchMedia("(pointer: coarse)").matches;
 
 export default function ScanReceiptModal({ account, onClose, onExtracted }) {
-  const [image, setImage]         = useState(null);
-  const [preview, setPreview]     = useState(null);
-  const [error, setError]         = useState("");
-  const [scanning, setScanning]   = useState(false);
-  const fileInputRef              = useRef(null);
-  const mobile                    = isMobile();
+  const [image, setImage]       = useState(null);
+  const [preview, setPreview]   = useState(null);
+  const [error, setError]       = useState("");
+  const [scanning, setScanning] = useState(false);
+  const cameraInputRef          = useRef(null);
+  const uploadInputRef          = useRef(null);
+  const mobile                  = isMobile();
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
@@ -31,6 +32,13 @@ export default function ScanReceiptModal({ account, onClose, onExtracted }) {
     onClose();
   };
 
+  useEffect(() => {
+    if (!preview) return;
+    return () => URL.revokeObjectURL(preview);
+  }, [preview]);
+
+  const reset = () => { setImage(null); setPreview(null); setError(""); };
+
   return (
     <Modal
       title={mobile ? "Scan Receipt" : "Upload Receipt"}
@@ -41,75 +49,100 @@ export default function ScanReceiptModal({ account, onClose, onExtracted }) {
     >
       <div className="pt-2 space-y-4">
 
-        {/* ── Image picker / camera ── */}
-        <div
-          onClick={() => fileInputRef.current?.click()}
-          className="border-2 border-dashed border-skin-border rounded-xl p-6
-                     flex flex-col items-center justify-center gap-3 cursor-pointer
-                     hover:border-emerald-500/50 hover:bg-emerald-500/5 transition-all"
-        >
-          {preview ? (
-            <img
-              src={preview}
-              alt="Receipt preview"
-              className="max-h-48 rounded-lg object-contain"
-            />
-          ) : (
-            <>
-              <div className="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20
-                              flex items-center justify-center text-emerald-500">
-                {mobile ? (
+        {/* ── Picker ── */}
+        {!preview ? (
+          mobile ? (
+            /* Mobile: two options */
+            <div className="grid grid-cols-2 gap-3">
+              {/* Camera */}
+              <button
+                onClick={() => cameraInputRef.current?.click()}
+                className="flex flex-col items-center justify-center gap-3 p-6 rounded-xl border-2 border-dashed border-skin-border hover:border-emerald-500/50 hover:bg-emerald-500/5 transition-all"
+              >
+                <div className="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-500">
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
                     <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
                     <circle cx="12" cy="13" r="4" />
                   </svg>
-                ) : (
+                </div>
+                <div className="text-center">
+                  <p className="text-skin-text text-sm font-medium">Scan with Camera</p>
+                  <p className="text-skin-text-muted text-xs mt-0.5">Open camera</p>
+                </div>
+              </button>
+
+              {/* Gallery */}
+              <button
+                onClick={() => uploadInputRef.current?.click()}
+                className="flex flex-col items-center justify-center gap-3 p-6 rounded-xl border-2 border-dashed border-skin-border hover:border-emerald-500/50 hover:bg-emerald-500/5 transition-all"
+              >
+                <div className="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-500">
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                    <polyline points="17 8 12 3 7 8" />
-                    <line x1="12" y1="3" x2="12" y2="15" />
+                    <rect x="3" y="3" width="18" height="18" rx="2" />
+                    <circle cx="8.5" cy="8.5" r="1.5" />
+                    <polyline points="21 15 16 10 5 21" />
                   </svg>
-                )}
+                </div>
+                <div className="text-center">
+                  <p className="text-skin-text text-sm font-medium">Upload Photo</p>
+                  <p className="text-skin-text-muted text-xs mt-0.5">From gallery</p>
+                </div>
+              </button>
+            </div>
+          ) : (
+            /* Desktop: single upload area */
+            <div
+              onClick={() => uploadInputRef.current?.click()}
+              className="border-2 border-dashed border-skin-border rounded-xl p-6 flex flex-col items-center justify-center gap-3 cursor-pointer hover:border-emerald-500/50 hover:bg-emerald-500/5 transition-all"
+            >
+              <div className="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-500">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="17 8 12 3 7 8" />
+                  <line x1="12" y1="3" x2="12" y2="15" />
+                </svg>
               </div>
               <div className="text-center">
-                <p className="text-skin-text text-sm font-medium">
-                  {mobile ? "Tap to scan receipt" : "Click to upload receipt"}
-                </p>
-                <p className="text-skin-text-muted text-xs mt-1">
-                  JPG, PNG, HEIK, or WEBP
-                </p>
+                <p className="text-skin-text text-sm font-medium">Click to upload receipt</p>
+                <p className="text-skin-text-muted text-xs mt-1">JPG, PNG, HEIC, or WEBP</p>
               </div>
-            </>
-          )}
-        </div>
+            </div>
+          )
+        ) : (
+          /* Preview */
+          <div className="border-2 border-dashed border-skin-border rounded-xl p-4 flex items-center justify-center">
+            <img src={preview} alt="Receipt preview" className="max-h-48 rounded-lg object-contain" />
+          </div>
+        )}
 
+        {/* Hidden inputs */}
         <input
-          ref={fileInputRef}
+          ref={cameraInputRef}
           type="file"
-          accept="image/jpg,image/jpeg,image/png,image/webp,image/heic"
-          capture={mobile ? "environment" : undefined}
+          accept="image/jpeg,image/png,image/webp,image/heic"
+          capture="environment"
+          onChange={handleFileChange}
+          className="hidden"
+        />
+        <input
+          ref={uploadInputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp,image/heic"
           onChange={handleFileChange}
           className="hidden"
         />
 
         {preview && (
-          <button
-            onClick={() => { setImage(null); setPreview(null); setError(""); }}
-            className="text-skin-text-muted hover:text-red-500 text-xs transition-colors"
-          >
+          <button onClick={reset} className="text-skin-text-muted hover:text-red-500 text-xs transition-colors">
             Remove image
           </button>
         )}
 
-        {error && (
-          <p className="text-red-500 text-sm">{error}</p>
-        )}
+        {error && <p className="text-red-500 text-sm">{error}</p>}
 
         {/* ── Actions ── */}
         <div className="flex gap-3 pt-1">
-          <Button variant="secondary" className="flex-1" onClick={onClose}>
-            Cancel
-          </Button>
+          <Button variant="secondary" className="flex-1" onClick={onClose}>Cancel</Button>
           <Button
             variant="primary"
             className="flex-1"
