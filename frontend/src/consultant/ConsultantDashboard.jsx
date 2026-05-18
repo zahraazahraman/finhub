@@ -29,6 +29,12 @@ function ProfileEditModal({ profile, onClose, onSaved }) {
   const [error, setError]   = useState("");
   const [loading, setLoading] = useState(false);
 
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = prev; };
+  }, []);
+
   const handle = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
   const handleSubmit = async () => {
@@ -41,8 +47,8 @@ function ProfileEditModal({ profile, onClose, onSaved }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-start justify-center z-50 overflow-y-auto py-8 px-4">
-      <div className="bg-skin-card border border-skin-border rounded-2xl w-full max-w-lg animate-scale-in" style={{ boxShadow: "var(--shadow-lg)" }}>
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 sm:p-4">
+      <div className="bg-skin-card border border-skin-border rounded-t-2xl sm:rounded-2xl w-full sm:max-w-lg animate-slide-up max-h-[90vh] overflow-y-auto" style={{ boxShadow: "var(--shadow-lg)" }}>
         <div className="flex items-center justify-between px-6 py-4 border-b border-skin-border">
           <h2 className="text-skin-text font-semibold">Edit Profile</h2>
           <button onClick={onClose} className="text-skin-text-muted hover:text-skin-text transition-colors">
