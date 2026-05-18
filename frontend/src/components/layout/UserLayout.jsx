@@ -121,7 +121,7 @@ function UserLayoutInner() {
   };
 
   return (
-    <div className="h-screen bg-skin-base flex overflow-hidden">
+    <div className="h-dvh bg-skin-base flex overflow-hidden">
 
       {/* ── Sidebar — hidden on mobile ── */}
       <aside className={`
@@ -283,7 +283,7 @@ function UserLayoutInner() {
         </header>
 
         {/* Page content — extra bottom padding on mobile for the tab bar */}
-        <main className="flex-1 p-4 md:p-6 pb-20 md:pb-6 overflow-y-auto animate-fade-in">
+        <main className="flex-1 p-4 md:p-6 pb-20 md:pb-6 overflow-y-auto overscroll-y-contain animate-fade-in">
           <Outlet />
         </main>
       </div>

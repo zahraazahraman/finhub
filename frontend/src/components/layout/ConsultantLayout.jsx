@@ -43,7 +43,7 @@ export default function ConsultantLayout() {
   };
 
   return (
-    <div className="h-screen bg-skin-base flex overflow-hidden">
+    <div className="h-dvh bg-skin-base flex overflow-hidden">
       {/* Sidebar — hidden on mobile */}
       <aside
         className={`hidden md:flex flex-col bg-skin-sidebar border-r border-skin-border transition-all duration-300 ease-in-out flex-shrink-0 h-screen sticky top-0 ${
@@ -166,7 +166,7 @@ export default function ConsultantLayout() {
           </div>
         </header>
 
-        <main className="flex-1 p-4 md:p-6 pb-20 md:pb-6 overflow-y-auto animate-fade-in">
+        <main className="flex-1 p-4 md:p-6 pb-20 md:pb-6 overflow-y-auto overscroll-y-contain animate-fade-in">
           <Outlet />
         </main>
       </div>
