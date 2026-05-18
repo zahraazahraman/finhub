@@ -1,9 +1,25 @@
+import { useEffect, useState } from "react";
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid,
     Tooltip, Legend, ResponsiveContainer,
 } from "recharts";
 import Card from "../ui/Card.jsx";
 import { formatCurrency } from "../../utils/formatters.js";
+
+function useIsMobile() {
+    const [mobile, setMobile] = useState(() => window.innerWidth < 640);
+    useEffect(() => {
+        const handler = () => setMobile(window.innerWidth < 640);
+        window.addEventListener("resize", handler);
+        return () => window.removeEventListener("resize", handler);
+    }, []);
+    return mobile;
+}
+
+const compactTick = (value, symbol) => {
+    if (Math.abs(value) >= 1000) return `${symbol}${(value / 1000).toFixed(1)}k`;
+    return `${symbol}${value}`;
+};
 
 const CustomTooltip = ({ active, payload, label, currencySymbol }) => {
     if (!active || !payload?.length) return null;
@@ -26,7 +42,8 @@ const CustomTooltip = ({ active, payload, label, currencySymbol }) => {
 };
 
 export default function DashboardBarChart({ data = [], currencySymbol = "$" }) {
-    // Format "2026-03" → "Mar 26" for the axis
+    const isMobile = useIsMobile();
+
     const formatted = data.map((row) => {
         const [year, month] = row.month.split("-");
         const label = new Date(year, month - 1).toLocaleDateString("en-US", {
@@ -49,10 +66,10 @@ export default function DashboardBarChart({ data = [], currencySymbol = "$" }) {
                     No transaction data for this period.
                 </div>
             ) : (
-                <ResponsiveContainer width="100%" height={240}>
+                <ResponsiveContainer width="100%" height={isMobile ? 200 : 240}>
                     <BarChart
                         data={formatted}
-                        margin={{ top: 5, right: 10, left: -20, bottom: 0 }}
+                        margin={{ top: 5, right: 10, left: isMobile ? -28 : -20, bottom: 0 }}
                         barCategoryGap="30%"
                         barGap={4}
                     >
@@ -63,16 +80,20 @@ export default function DashboardBarChart({ data = [], currencySymbol = "$" }) {
                         />
                         <XAxis
                             dataKey="label"
-                            tick={{ fill: "var(--text-muted)", fontSize: 12 }}
+                            tick={{ fill: "var(--text-muted)", fontSize: isMobile ? 10 : 12 }}
                             axisLine={false}
                             tickLine={false}
                         />
                         <YAxis
-                            tick={{ fill: "var(--text-muted)", fontSize: 12 }}
+                            tick={{ fill: "var(--text-muted)", fontSize: isMobile ? 10 : 12 }}
                             axisLine={false}
                             tickLine={false}
                             allowDecimals={false}
-                            tickFormatter={(value) => formatCurrency(value, currencySymbol)}
+                            tickFormatter={(value) =>
+                                isMobile
+                                    ? compactTick(value, currencySymbol)
+                                    : formatCurrency(value, currencySymbol)
+                            }
                         />
                         <Tooltip content={<CustomTooltip currencySymbol={currencySymbol} />} cursor={{ fill: "var(--bg-hover)", radius: 6 }} />
                         <Legend
