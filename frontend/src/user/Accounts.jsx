@@ -186,7 +186,7 @@ export default function Accounts() {
   return (
     <div className="animate-fade-in">
       {/* ── Header ── */}
-      <div className="flex items-center justify-between mb-6">
+      {!selectedAccount && <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-skin-text">My Accounts</h1>
           <p className="text-skin-text-secondary text-sm mt-1">
@@ -206,7 +206,7 @@ export default function Accounts() {
         >
           New Account
         </Button>
-      </div>
+      </div>}
 
       {!selectedAccount && (
         <AccountFilters
