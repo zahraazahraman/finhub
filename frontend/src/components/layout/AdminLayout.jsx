@@ -166,6 +166,23 @@ function LogoutConfirmModal({ onConfirm, onCancel }) {
   );
 }
 
+function MobileWall() {
+  return (
+    <div className="md:hidden fixed inset-0 bg-skin-base flex flex-col items-center justify-center text-center p-8 z-50">
+      <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mb-6">
+        <svg className="w-8 h-8 text-emerald-500" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+          <rect x="2" y="3" width="20" height="14" rx="2" />
+          <path d="M8 21h8M12 17v4" />
+        </svg>
+      </div>
+      <h2 className="text-skin-text text-xl font-bold mb-3">Desktop Required</h2>
+      <p className="text-skin-text-secondary text-sm leading-relaxed max-w-xs">
+        The admin panel is designed for desktop use. Please open FinHub on a larger screen for the best experience.
+      </p>
+    </div>
+  );
+}
+
 export default function AdminLayout() {
   const [collapsed, setCollapsed] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
@@ -182,6 +199,7 @@ export default function AdminLayout() {
 
   return (
     <div className="h-screen bg-skin-base flex overflow-hidden">
+      <MobileWall />
       {/* ── Sidebar ── */}
       <aside
         className={`

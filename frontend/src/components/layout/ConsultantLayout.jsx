@@ -44,9 +44,9 @@ export default function ConsultantLayout() {
 
   return (
     <div className="h-screen bg-skin-base flex overflow-hidden">
-      {/* Sidebar */}
+      {/* Sidebar — hidden on mobile */}
       <aside
-        className={`flex flex-col bg-skin-sidebar border-r border-skin-border transition-all duration-300 ease-in-out flex-shrink-0 h-screen sticky top-0 ${
+        className={`hidden md:flex flex-col bg-skin-sidebar border-r border-skin-border transition-all duration-300 ease-in-out flex-shrink-0 h-screen sticky top-0 ${
           collapsed ? "w-16" : "w-60"
         }`}
         style={{ boxShadow: "var(--shadow-sm)" }}
@@ -130,12 +130,13 @@ export default function ConsultantLayout() {
       {/* Main */}
       <div className="flex-1 flex flex-col min-w-0">
         <header
-          className="h-16 bg-skin-topbar border-b border-skin-border flex items-center px-6 gap-4 flex-shrink-0"
+          className="h-16 bg-skin-topbar border-b border-skin-border flex items-center px-4 md:px-6 gap-4 flex-shrink-0"
           style={{ boxShadow: "var(--shadow-sm)" }}
         >
+          {/* Sidebar toggle — desktop only */}
           <button
             onClick={() => setCollapsed((v) => !v)}
-            className="text-skin-text-secondary hover:text-skin-text transition-colors p-1.5 rounded-lg hover:bg-skin-hover"
+            className="hidden md:flex text-skin-text-secondary hover:text-skin-text transition-colors p-1.5 rounded-lg hover:bg-skin-hover"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
               <line x1="3" y1="6" x2="21" y2="6" />
@@ -143,6 +144,19 @@ export default function ConsultantLayout() {
               <line x1="3" y1="18" x2="21" y2="18" />
             </svg>
           </button>
+          {/* Logo — mobile only */}
+          <div className="flex md:hidden items-center gap-2">
+            <div className="relative w-7 h-7 flex-shrink-0">
+              <div className="absolute inset-0 bg-emerald-500 rounded-lg rotate-6 opacity-30" />
+              <div className="absolute inset-0 bg-emerald-400 rounded-lg flex items-center justify-center">
+                <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 text-slate-900" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
+                  <polyline points="16 7 22 7 22 13" />
+                </svg>
+              </div>
+            </div>
+            <span className="font-bold text-skin-text tracking-tight">Fin<span className="text-emerald-500">Hub</span></span>
+          </div>
           <div className="flex-1" />
           <ThemeToggle />
           <div className="w-8 h-8 rounded-full bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center">
@@ -152,10 +166,38 @@ export default function ConsultantLayout() {
           </div>
         </header>
 
-        <main className="flex-1 p-6 overflow-y-auto animate-fade-in">
+        <main className="flex-1 p-4 md:p-6 pb-20 md:pb-6 overflow-y-auto animate-fade-in">
           <Outlet />
         </main>
       </div>
+
+      {/* ── Mobile bottom tab bar ── */}
+      <nav className="md:hidden fixed bottom-0 inset-x-0 bg-skin-sidebar border-t border-skin-border z-40 flex items-stretch">
+        {navItems.map((item) => (
+          <NavLink
+            key={item.path}
+            to={item.path}
+            className={({ isActive }) => `
+              flex-1 flex flex-col items-center justify-center gap-1 py-2 text-[10px] font-medium transition-colors
+              ${isActive ? "text-emerald-500" : "text-skin-text-muted"}
+            `}
+          >
+            {item.icon}
+            {item.label}
+          </NavLink>
+        ))}
+        <button
+          onClick={() => setShowLogoutModal(true)}
+          className="flex-1 flex flex-col items-center justify-center gap-1 py-2 text-[10px] font-medium text-skin-text-muted"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+            <polyline points="16 17 21 12 16 7"/>
+            <line x1="21" y1="12" x2="9" y2="12"/>
+          </svg>
+          Logout
+        </button>
+      </nav>
 
       {showLogoutModal && (
         <Modal
