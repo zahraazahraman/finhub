@@ -312,7 +312,7 @@ export default function Profile() {
         }
       >
         <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <InputField
               label="First Name"
               value={firstName}
@@ -356,7 +356,7 @@ export default function Profile() {
             placeholder="Enter current password"
             autoComplete="current-password"
           />
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <InputField
               label="New Password"
               type="password"

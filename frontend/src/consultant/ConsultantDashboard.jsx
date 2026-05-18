@@ -3,17 +3,15 @@ import { useConsultantAuth } from "../context/ConsultantAuthContext.jsx";
 import api from "../utils/api.js";
 
 function StatCard({ label, value, color = "emerald" }) {
-  const colors = {
-    emerald: "bg-emerald-500/10 text-emerald-500",
-    yellow:  "bg-yellow-500/10 text-yellow-500",
-    slate:   "bg-skin-hover text-skin-text-muted",
-    blue:    "bg-blue-500/10 text-blue-400",
+  const valueColors = {
+    emerald: "text-emerald-500",
+    yellow:  "text-yellow-500",
+    slate:   "text-skin-text-muted",
+    blue:    "text-blue-400",
   };
   return (
-    <div className="bg-skin-card border border-skin-border rounded-2xl p-5" style={{ boxShadow: "var(--shadow-sm)" }}>
-      <div className={`inline-flex items-center justify-center w-10 h-10 rounded-xl mb-3 ${colors[color]}`}>
-        <span className="text-lg font-bold">{value ?? "—"}</span>
-      </div>
+    <div className="bg-skin-card border border-skin-border rounded-2xl p-4 sm:p-5" style={{ boxShadow: "var(--shadow-sm)" }}>
+      <p className={`text-3xl font-bold mb-1 ${valueColors[color]}`}>{value ?? "—"}</p>
       <p className="text-skin-text-muted text-xs uppercase tracking-wide">{label}</p>
     </div>
   );
@@ -55,7 +53,7 @@ function ProfileEditModal({ profile, onClose, onSaved }) {
         </div>
 
         <div className="px-6 py-5 space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {[["first_name", "First name"], ["last_name", "Last name"]].map(([name, label]) => (
               <div key={name}>
                 <label className="block text-skin-text-muted text-xs uppercase tracking-wide mb-1.5">{label}</label>
@@ -66,7 +64,7 @@ function ProfileEditModal({ profile, onClose, onSaved }) {
               </div>
             ))}
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-skin-text-muted text-xs uppercase tracking-wide mb-1.5">Phone</label>
               <input
@@ -143,7 +141,7 @@ export default function ConsultantDashboard() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col gap-6">
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
@@ -167,7 +165,7 @@ export default function ConsultantDashboard() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
         <StatCard label="Total inquiries" value={stats?.total}     color="blue" />
         <StatCard label="Pending"          value={stats?.pending}   color="yellow" />
         <StatCard label="Replied"          value={stats?.responded} color="emerald" />
