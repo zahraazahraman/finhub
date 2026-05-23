@@ -10,8 +10,8 @@ function StatCard({ label, value, color = "emerald" }) {
     blue:    "text-blue-400",
   };
   return (
-    <div className="bg-skin-card border border-skin-border rounded-2xl p-4 sm:p-5" style={{ boxShadow: "var(--shadow-sm)" }}>
-      <p className={`text-3xl font-bold mb-1 ${valueColors[color]}`}>{value ?? "—"}</p>
+    <div className="bg-skin-card border border-skin-border rounded-2xl p-4 sm:p-5 overflow-hidden" style={{ boxShadow: "var(--shadow-sm)" }}>
+      <p className={`text-xl sm:text-2xl lg:text-3xl font-bold leading-tight break-all mb-1 ${valueColors[color]}`}>{value ?? "—"}</p>
       <p className="text-skin-text-muted text-xs uppercase tracking-wide">{label}</p>
     </div>
   );

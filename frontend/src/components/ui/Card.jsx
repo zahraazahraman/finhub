@@ -16,7 +16,7 @@ export default function Card({
   return (
     <div
       className={`
-      bg-skin-card border border-skin-border rounded-2xl
+      bg-skin-card border border-skin-border rounded-2xl overflow-hidden
       transition-all duration-150 animate-slide-up
       ${paddings[padding]}
       ${hover ? "hover:shadow-md cursor-pointer" : ""}

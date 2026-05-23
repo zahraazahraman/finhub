@@ -74,7 +74,7 @@ export default function AccountCard({ account, onSelect, onDelete }) {
         </p>
 
         {/* Balance */}
-        <p className="text-2xl font-bold text-skin-text mt-3">
+        <p className="text-xl sm:text-2xl font-bold text-skin-text leading-tight break-all mt-3">
           {formatCurrency(account.balance, account.currency_symbol)}
         </p>
         <p className="text-skin-text-muted text-xs mt-1">{account.currency_code}</p>

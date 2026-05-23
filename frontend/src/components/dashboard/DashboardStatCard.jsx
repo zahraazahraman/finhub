@@ -18,7 +18,7 @@ export default function DashboardStatCard({ label, value, sub, color = "emerald"
                     {icon}
                 </div>
             </div>
-            <p className="text-3xl font-bold text-skin-text">{value}</p>
+            <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-skin-text leading-tight break-all">{value}</p>
             <div className="flex items-center justify-between mt-1">
                 {sub && <p className="text-skin-text-muted text-xs">{sub}</p>}
                 {trend !== undefined && (

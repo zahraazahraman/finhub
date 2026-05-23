@@ -32,7 +32,7 @@ function StatCard({ label, value, sub, color = "emerald", icon }) {
           {icon}
         </div>
       </div>
-      <p className="text-3xl font-bold text-skin-text">{value}</p>
+      <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-skin-text leading-tight break-all">{value}</p>
       {sub && <p className="text-skin-text-muted text-xs mt-1">{sub}</p>}
     </Card>
   );
