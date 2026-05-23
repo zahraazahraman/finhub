@@ -244,7 +244,7 @@ CREATE TABLE `ChatSessions` (
   `chat_session_id` int(11) NOT NULL,
   `user_id` int(11) NOT NULL,
   `started_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `ended_at` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00'
+  `ended_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --

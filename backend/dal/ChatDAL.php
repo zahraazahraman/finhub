@@ -10,13 +10,13 @@ class ChatDAL {
 
     // ── Sessions ──
 
-    // Active session = ended_at is the zero default value (never ended)
+    // Active session = ended_at is NULL (never ended)
     public function getActiveSession(int $userId): ?array {
         $stmt = $this->db->prepare(
             "SELECT *
              FROM ChatSessions
              WHERE user_id = :user_id
-               AND ended_at = '0000-00-00 00:00:00'
+               AND ended_at IS NULL
              ORDER BY started_at DESC
              LIMIT 1"
         );
