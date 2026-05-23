@@ -63,7 +63,7 @@ function tryFrankfurter(string $from, string $to): ?float {
         return null;
     }
 
-    $url      = "https://api.frankfurter.app/latest?from={$from}&to={$to}";
+    $url      = FRANKFURTER_API_URL . "/latest?from={$from}&to={$to}";
     $response = @file_get_contents($url);
 
     if ($response === false) {
@@ -79,11 +79,12 @@ function tryFrankfurter(string $from, string $to): ?float {
     return (float)$data['rates'][$to];
 }
 
-// ── Helper: Try open-source currency API ──
+// ── Helper: Try open-source currency API (fawazahmed0 v2 — Cloudflare Pages) ──
 function tryOpenSourceAPI(string $from, string $to): ?float {
-    // Use fawazahmed0's free currency API (completely free, no auth, all currencies)
-    $url = "https://cdn.jsdelivr.net/gh/fawazahmed0/currency-api@1/latest/currencies/{$from}.min.json";
-    
+    $fromLower = strtolower($from);
+    $toLower   = strtolower($to);
+    $url       = FAWAZAHMED0_API_URL . "/{$fromLower}.min.json";
+
     $response = @file_get_contents($url);
 
     if ($response === false) {
@@ -92,10 +93,10 @@ function tryOpenSourceAPI(string $from, string $to): ?float {
 
     $data = json_decode($response, true);
 
-    // Navigate: { "usd": { "eur": 0.92, ... } }
-    if (!isset($data[$from][strtolower($to)])) {
+    // Response: { "usd": { "eur": 0.92, ... } }
+    if (!isset($data[$fromLower][$toLower])) {
         return null;
     }
 
-    return (float)$data[$from][strtolower($to)];
+    return (float)$data[$fromLower][$toLower];
 }

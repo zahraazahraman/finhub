@@ -143,28 +143,53 @@ class DashboardUserBLL {
         ];
     }
 
-    // ── Build rate map from frankfurter.app ──
-    // One HTTP call per distinct foreign currency
+    // ── Build rate map: foreign currency → target currency rate ──
+    // Frankfurter is the primary source (~30 major currencies).
+    // Currencies it doesn't support (LBP, AED, SAR, EGP, …) are resolved in a
+    // single batched call to fawazahmed0 v2, which covers 160+ currencies.
     private function buildRateMap(array $foreignCurrencies, string $targetCurrency): array {
-        $rateMap = [];
+        $rateMap      = [];
+        $needFallback = [];
+
+        // ── Primary: Frankfurter ──
         foreach ($foreignCurrencies as $from) {
             if ($from === $targetCurrency) continue;
 
-            $url      = "https://api.frankfurter.app/latest?from={$from}&to={$targetCurrency}";
+            $url      = FRANKFURTER_API_URL . "/latest?from={$from}&to={$targetCurrency}";
             $response = @file_get_contents($url);
 
-            if ($response === false) {
-                // Rate unavailable — mark as 1:1 fallback
-                $rateMap[$from] = 1.0;
-                continue;
+            if ($response !== false) {
+                $data = json_decode($response, true);
+                if (isset($data['rates'][$targetCurrency])) {
+                    $rateMap[$from] = (float)$data['rates'][$targetCurrency];
+                    continue;
+                }
             }
 
-            $data = json_decode($response, true);
-
-            $rateMap[$from] = isset($data['rates'][$targetCurrency])
-                ? (float)$data['rates'][$targetCurrency]
-                : 1.0; // fallback if rate missing
+            $needFallback[] = $from;
         }
+
+        // ── Fallback: fawazahmed0 v2 — one batched call for all missing currencies ──
+        if (!empty($needFallback)) {
+            $targetLower = strtolower($targetCurrency);
+            $url         = FAWAZAHMED0_API_URL . "/{$targetLower}.min.json";
+            $response    = @file_get_contents($url);
+
+            if ($response !== false) {
+                $data = json_decode($response, true);
+                foreach ($needFallback as $from) {
+                    $fromLower = strtolower($from);
+                    // Response: { "eur": { "lbp": 103846, … } } — invert to get FROM→TARGET rate
+                    $inverse = $data[$targetLower][$fromLower] ?? 0;
+                    $rateMap[$from] = ($inverse > 0) ? (1.0 / $inverse) : 1.0;
+                }
+            } else {
+                foreach ($needFallback as $from) {
+                    $rateMap[$from] = 1.0;
+                }
+            }
+        }
+
         return $rateMap;
     }
 

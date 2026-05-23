@@ -13,6 +13,12 @@ if (file_exists($envFile)) {
 // Frontend origin — used for email links. Never derive this from HTTP_HOST.
 defined('APP_URL') || define('APP_URL', $_ENV['APP_URL'] ?? 'http://localhost:5173');
 
+// ── External API base URLs ──
+// Public, keyless APIs — same in every environment.
+// Centralised here so a URL change (like fawazahmed0 v1→v2) is a one-line fix.
+defined('FRANKFURTER_API_URL')  || define('FRANKFURTER_API_URL',  'https://api.frankfurter.app');
+defined('FAWAZAHMED0_API_URL')  || define('FAWAZAHMED0_API_URL',  'https://latest.currency-api.pages.dev/v1/currencies');
+
 $isProduction = ($_ENV['APP_ENV'] ?? 'local') === 'production';
 
 // Hide errors in production so stack traces are never exposed publicly.
