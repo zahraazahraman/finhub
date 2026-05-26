@@ -50,6 +50,8 @@ RewriteRule ^api/reminders/weekly-summary$    backend/ws/reminders/weekly-summar
 RewriteRule ^api/transactions/scan-receipt$   backend/ws/transactions/scan-receipt.php  [QSA,L]
 RewriteRule ^api/transactions/import$         backend/ws/transactions/import.php        [QSA,L]
 
+RewriteRule ^api/chat/history$                backend/ws/chat/history.php               [QSA,L]
+
 # ── API: Resource endpoints — index.php with optional path segment ────────────
 RewriteRule ^api/profile(/.*)?$                 backend/ws/profile/index.php$1                 [QSA,L]
 RewriteRule ^api/users(/.*)?$                   backend/ws/users/index.php$1                   [QSA,L]

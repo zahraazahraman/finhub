@@ -128,6 +128,11 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace('/api/user-consultants', '/FinHub/backend/ws/user-consultants/index.php'),
       },
+      "/api/chat/history": {
+        target: "http://localhost",
+        changeOrigin: true,
+        rewrite: (path) => path.replace('/api/chat/history', '/FinHub/backend/ws/chat/history.php'),
+      },
       "/api/chat": {
         target: "http://localhost",
         changeOrigin: true,

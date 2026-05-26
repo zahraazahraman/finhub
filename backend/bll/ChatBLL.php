@@ -89,6 +89,47 @@ class ChatBLL {
         ];
     }
 
+    // ── History ──
+
+    public function getHistory(int $userId): array {
+        $rows = $this->dal->getPastSessions($userId);
+
+        foreach ($rows as &$row) {
+            $plain = $row['first_message'];
+            $row['snippet'] = $plain !== null
+                ? (mb_strlen($plain) > 80 ? mb_substr($plain, 0, 80) . '…' : $plain)
+                : null;
+            unset($row['first_message']);
+        }
+        unset($row);
+
+        return ['success' => true, 'sessions' => $rows];
+    }
+
+    public function getSessionMessages(int $userId, int $sessionId): array {
+        $session = $this->dal->getSessionById($sessionId);
+        if (!$session || (int)$session['user_id'] !== $userId)
+            return ['success' => false, 'message' => 'Session not found.'];
+
+        $messages = $this->dal->getMessages($sessionId);
+        return ['success' => true, 'session' => $session, 'messages' => $messages];
+    }
+
+    public function resumeSession(int $userId, int $sessionId): array {
+        $session = $this->dal->getSessionById($sessionId);
+        if (!$session || (int)$session['user_id'] !== $userId)
+            return ['success' => false, 'message' => 'Session not found.'];
+
+        $this->dal->resumeSession($userId, $sessionId);
+        $messages = $this->dal->getMessages($sessionId);
+
+        return [
+            'success'    => true,
+            'session_id' => $sessionId,
+            'messages'   => $messages,
+        ];
+    }
+
     // ── Build Groq messages array ──
     // Passes shareData and aiTone down to the system prompt builder.
     private function buildGroqMessages(int $userId, array $history, int $shareData, string $aiTone): array {
