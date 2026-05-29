@@ -1,8 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import ThemeToggle from "../components/common/ThemeToggle.jsx";
 import Button from "../components/ui/Button.jsx";
 import Card from "../components/ui/Card.jsx";
+import { useInView } from "../hooks/useInView.js";
+import HeroGrid from "../components/landing/HeroGrid.jsx";
 
 function StarRating({ rating }) {
   const r = parseFloat(rating) || 0;
@@ -28,111 +30,69 @@ function StarRating({ rating }) {
 const features = [
   {
     icon: (
-      <svg
-        className="w-6 h-6"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        viewBox="0 0 24 24"
-      >
+      <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
         <rect x="2" y="5" width="20" height="14" rx="2" />
         <path d="M2 10h20" />
       </svg>
     ),
     title: "My Accounts",
-    description:
-      "Create and manage multiple accounts. Log transactions manually, import via CSV, or scan receipts with AI-powered OCR.",
+    description: "Create and manage multiple accounts. Log transactions manually, import via CSV, or scan receipts with AI-powered OCR.",
     color: "emerald",
   },
   {
     icon: (
-      <svg
-        className="w-6 h-6"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        viewBox="0 0 24 24"
-      >
+      <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
         <line x1="18" y1="20" x2="18" y2="10" />
         <line x1="12" y1="20" x2="12" y2="4" />
         <line x1="6" y1="20" x2="6" y2="14" />
       </svg>
     ),
     title: "Investments",
-    description:
-      "Track stocks, crypto, and real estate. Get AI-powered analysis with hold, sell, or buy recommendations.",
+    description: "Track stocks, crypto, and real estate. Get AI-powered analysis with hold, sell, or buy recommendations.",
     color: "blue",
   },
   {
     icon: (
-      <svg
-        className="w-6 h-6"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        viewBox="0 0 24 24"
-      >
+      <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
         <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
       </svg>
     ),
     title: "Financial Goals",
-    description:
-      "Set savings targets and debt repayment goals. Track your progress and stay motivated every step of the way.",
+    description: "Set savings targets and debt repayment goals. Track your progress and stay motivated every step of the way.",
     color: "yellow",
   },
   {
     icon: (
-      <svg
-        className="w-6 h-6"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        viewBox="0 0 24 24"
-      >
+      <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
         <circle cx="12" cy="7" r="4" />
         <path d="M16 11l2 2 4-4" />
       </svg>
     ),
     title: "Consultants",
-    description:
-      "Chat with our AI financial advisor or connect with verified human consultants filtered by your needs.",
+    description: "Chat with our AI financial advisor or connect with verified human consultants filtered by your needs.",
     color: "purple",
   },
   {
     icon: (
-      <svg
-        className="w-6 h-6"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        viewBox="0 0 24 24"
-      >
+      <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
         <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
         <path d="M13.73 21a2 2 0 0 1-3.46 0" />
       </svg>
     ),
     title: "Smart Reminders",
-    description:
-      "Never miss a bill again. Set custom email reminders and receive weekly financial summaries automatically.",
+    description: "Never miss a bill again. Set custom email reminders and receive weekly financial summaries automatically.",
     color: "red",
   },
   {
     icon: (
-      <svg
-        className="w-6 h-6"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        viewBox="0 0 24 24"
-      >
+      <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
         <circle cx="12" cy="12" r="10" />
         <path d="M12 8v4l3 3" />
       </svg>
     ),
     title: "Real-Time Insights",
-    description:
-      "Get AI-generated spending patterns, anomaly detection, and personalized suggestions to improve your finances.",
+    description: "Get AI-generated spending patterns, anomaly detection, and personalized suggestions to improve your finances.",
     color: "orange",
   },
 ];
@@ -141,20 +101,17 @@ const steps = [
   {
     number: "01",
     title: "Create your account",
-    description:
-      "Sign up in seconds. No bank integration needed — you're in full control of your data.",
+    description: "Sign up in seconds. No bank integration needed — you're in full control of your data.",
   },
   {
     number: "02",
     title: "Add your accounts & transactions",
-    description:
-      "Manually log your finances, import CSV sheets, or scan receipts with our AI OCR tool.",
+    description: "Manually log your finances, import CSV sheets, or scan receipts with our AI OCR tool.",
   },
   {
     number: "03",
     title: "Track, grow & achieve",
-    description:
-      "Monitor your spending, hit your goals, and make smarter decisions with AI-powered insights.",
+    description: "Monitor your spending, hit your goals, and make smarter decisions with AI-powered insights.",
   },
 ];
 
@@ -167,35 +124,91 @@ const colorMap = {
   orange: "bg-orange-500/10 border-orange-500/20 text-orange-500",
 };
 
+const staggerClass = ["stagger-1", "stagger-2", "stagger-3", "stagger-4", "stagger-5", "stagger-6"];
+
+/* ── Small section-header component ── */
+function SectionHeader({ eyebrow, title, subtitle, inView }) {
+  return (
+    <div className="text-center mb-16">
+      {eyebrow && (
+        <p className={`reveal ${inView ? "in-view" : ""} stagger-1 text-emerald-500 text-sm font-medium uppercase tracking-widest mb-3`}>
+          {eyebrow}
+        </p>
+      )}
+      <h2 className={`reveal ${inView ? "in-view" : ""} stagger-2 text-3xl md:text-4xl font-bold text-skin-text mb-4`}>
+        {title}
+      </h2>
+      {subtitle && (
+        <p className={`reveal ${inView ? "in-view" : ""} stagger-3 text-skin-text-secondary text-lg max-w-2xl mx-auto`}>
+          {subtitle}
+        </p>
+      )}
+    </div>
+  );
+}
+
 export default function LandingPage() {
   const navigate = useNavigate();
   const [consultants, setConsultants] = useState([]);
 
+  /* navbar scroll state */
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 20);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
   useEffect(() => {
     fetch("/api/public/consultants")
       .then((r) => r.json())
-      .then((data) => {
-        if (Array.isArray(data)) setConsultants(data);
-      });
+      .then((data) => { if (Array.isArray(data)) setConsultants(data); });
   }, []);
+
+  /* hero parallax blob */
+  const blobRef = useRef(null);
+  useEffect(() => {
+    const onScroll = () => {
+      if (blobRef.current) {
+        blobRef.current.style.transform = `translate(-50%, ${window.scrollY * 0.18}px)`;
+      }
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  /* hero content entrance — delayed so it feels intentional */
+  const [heroVisible, setHeroVisible] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setHeroVisible(true), 80);
+    return () => clearTimeout(t);
+  }, []);
+
+  /* section refs */
+  const [featuresRef, featuresInView]       = useInView();
+  const [stepsRef, stepsInView]             = useInView();
+  const [consultantsRef, consultantsInView] = useInView();
+  const [ctaRef, ctaInView]                                 = useInView();
+  const [dualCtaRef, dualCtaInView]                         = useInView();
+
 
   return (
     <div className="min-h-screen bg-skin-base text-skin-text transition-colors duration-200">
+
       {/* ── Navbar ── */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-skin-base/80 backdrop-blur-md border-b border-skin-border">
+      <nav
+        className={`fixed top-0 left-0 right-0 z-50 border-b border-skin-border transition-all duration-300 ${
+          scrolled
+            ? "bg-skin-base/95 backdrop-blur-md shadow-sm"
+            : "bg-skin-base/80 backdrop-blur-md"
+        }`}
+      >
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-          {/* Logo */}
           <div className="flex items-center gap-2.5">
             <div className="relative w-8 h-8 flex-shrink-0">
               <div className="absolute inset-0 bg-emerald-500 rounded-lg rotate-6 opacity-30" />
               <div className="absolute inset-0 bg-emerald-400 rounded-lg flex items-center justify-center">
-                <svg
-                  viewBox="0 0 24 24"
-                  className="w-4 h-4 text-slate-900"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                >
+                <svg viewBox="0 0 24 24" className="w-4 h-4 text-slate-900" fill="none" stroke="currentColor" strokeWidth="2.5">
                   <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
                   <polyline points="16 7 22 7 22 13" />
                 </svg>
@@ -207,7 +220,6 @@ export default function LandingPage() {
             </span>
           </div>
 
-          {/* Nav links */}
           <div className="hidden md:flex items-center gap-8">
             {["Features", "How it works", "Consultants"].map((item) => (
               <a
@@ -226,70 +238,50 @@ export default function LandingPage() {
             </a>
           </div>
 
-          {/* Right side */}
           <div className="flex items-center gap-3">
             <ThemeToggle />
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate("/login")}
-            >
-              Sign In
-            </Button>
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={() => navigate("/register")}
-            >
-              Get Started
-            </Button>
+            <Button variant="ghost" size="sm" onClick={() => navigate("/login")}>Sign In</Button>
+            <Button variant="primary" size="sm" onClick={() => navigate("/register")}>Get Started</Button>
           </div>
         </div>
       </nav>
 
       {/* ── Hero ── */}
       <section className="relative pt-32 pb-24 px-6 overflow-hidden">
+        <HeroGrid />
         <div
-          className="absolute inset-0 opacity-[0.04] pointer-events-none"
-          style={{
-            backgroundImage:
-              "linear-gradient(#34d399 1px, transparent 1px), linear-gradient(90deg, #34d399 1px, transparent 1px)",
-            backgroundSize: "40px 40px",
-          }}
+          ref={blobRef}
+          className="absolute top-1/3 left-1/2 -translate-x-1/2 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"
+          style={{ willChange: "transform" }}
         />
-        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
 
         <div className="relative max-w-4xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 text-xs font-medium px-4 py-2 rounded-full mb-8">
+          <div
+            className={`reveal ${heroVisible ? "in-view" : ""} stagger-1 inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 text-xs font-medium px-4 py-2 rounded-full mb-8`}
+          >
             <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
             AI-Powered Personal Finance Platform
           </div>
 
-          <h1 className="text-5xl md:text-6xl font-bold leading-tight mb-6 text-skin-text">
+          <h1 className={`reveal ${heroVisible ? "in-view" : ""} stagger-2 text-5xl md:text-6xl font-bold leading-tight mb-6 text-skin-text`}>
             See where your money goes.
             <br />
             <span className="text-emerald-500">Know where it grows.</span>
           </h1>
 
-          <p className="text-skin-text-secondary text-lg leading-relaxed max-w-2xl mx-auto mb-10">
+          <p className={`reveal ${heroVisible ? "in-view" : ""} stagger-3 text-skin-text-secondary text-lg leading-relaxed max-w-2xl mx-auto mb-10`}>
             FinHub gives you full control over your finances — track spending,
             set goals, manage investments, and get AI-powered insights, all in
             one place.
           </p>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+          <div className={`reveal ${heroVisible ? "in-view" : ""} stagger-4 flex flex-col sm:flex-row items-center justify-center gap-4`}>
             <Button
               variant="primary"
               size="lg"
               onClick={() => navigate("/register")}
               icon={
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                  viewBox="0 0 24 24"
-                >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
                   <path d="M5 12h14M12 5l7 7-7 7" />
                 </svg>
               }
@@ -297,25 +289,18 @@ export default function LandingPage() {
             >
               Start for free
             </Button>
-            <Button
-              variant="outline"
-              size="lg"
-              onClick={() => navigate("/login")}
-            >
+            <Button variant="outline" size="lg" onClick={() => navigate("/login")}>
               Sign in to your account
             </Button>
           </div>
 
-          <div className="flex items-center justify-center gap-12 mt-16">
+          <div className={`reveal ${heroVisible ? "in-view" : ""} stagger-5 flex items-center justify-center gap-12 mt-16`}>
             {[
               { label: "Free to use", icon: "✦" },
               { label: "AI-powered", icon: "✦" },
               { label: "No bank required", icon: "✦" },
             ].map((s) => (
-              <div
-                key={s.label}
-                className="flex items-center gap-2 text-skin-text-muted text-sm"
-              >
+              <div key={s.label} className="flex items-center gap-2 text-skin-text-muted text-sm">
                 <span className="text-emerald-500 text-xs">{s.icon}</span>
                 {s.label}
               </div>
@@ -327,31 +312,29 @@ export default function LandingPage() {
       {/* ── Features ── */}
       <section id="features" className="py-24 px-6 bg-skin-secondary">
         <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-skin-text mb-4">
-              Everything you need to manage your finances
-            </h2>
-            <p className="text-skin-text-secondary text-lg max-w-2xl mx-auto">
-              From tracking daily expenses to AI-powered investment analysis —
-              FinHub has it all.
-            </p>
+          <div ref={featuresRef}>
+            <SectionHeader
+              eyebrow="What's inside"
+              title="Everything you need to manage your finances"
+              subtitle="From tracking daily expenses to AI-powered investment analysis — FinHub has it all."
+              inView={featuresInView}
+            />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {features.map((f) => (
-              <Card key={f.title} hover={true} className="group">
-                <div
-                  className={`w-12 h-12 rounded-xl border flex items-center justify-center mb-4 ${colorMap[f.color]}`}
-                >
-                  {f.icon}
-                </div>
-                <h3 className="text-skin-text font-semibold text-lg mb-2">
-                  {f.title}
-                </h3>
-                <p className="text-skin-text-secondary text-sm leading-relaxed">
-                  {f.description}
-                </p>
-              </Card>
+            {features.map((f, i) => (
+              <div
+                key={f.title}
+                className={`reveal ${featuresInView ? "in-view" : ""} ${staggerClass[i]} group`}
+              >
+                <Card hover={true} className="h-full">
+                  <div className={`w-12 h-12 rounded-xl border flex items-center justify-center mb-4 ${colorMap[f.color]}`}>
+                    {f.icon}
+                  </div>
+                  <h3 className="text-skin-text font-semibold text-lg mb-2">{f.title}</h3>
+                  <p className="text-skin-text-secondary text-sm leading-relaxed">{f.description}</p>
+                </Card>
+              </div>
             ))}
           </div>
         </div>
@@ -360,33 +343,30 @@ export default function LandingPage() {
       {/* ── How it works ── */}
       <section id="how-it-works" className="py-24 px-6 bg-skin-secondary">
         <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-skin-text mb-4">
-              Get started in 3 simple steps
-            </h2>
-            <p className="text-skin-text-secondary text-lg">
-              No complexity. No bank integration. Just you and your finances.
-            </p>
+          <div ref={stepsRef}>
+            <SectionHeader
+              eyebrow="Getting started"
+              title="Get started in 3 simple steps"
+              subtitle="No complexity. No bank integration. Just you and your finances."
+              inView={stepsInView}
+            />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {steps.map((step, i) => (
-              <div key={step.number} className="relative text-center">
+              <div
+                key={step.number}
+                className={`reveal ${stepsInView ? "in-view" : ""} ${staggerClass[i]} relative text-center`}
+              >
                 {i < steps.length - 1 && (
                   <div className="hidden md:block absolute top-8 left-1/2 w-full h-px bg-skin-border" />
                 )}
                 <div className="relative">
                   <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mx-auto mb-4">
-                    <span className="text-emerald-500 font-bold text-lg">
-                      {step.number}
-                    </span>
+                    <span className="text-emerald-500 font-bold text-lg">{step.number}</span>
                   </div>
-                  <h3 className="text-skin-text font-semibold mb-2">
-                    {step.title}
-                  </h3>
-                  <p className="text-skin-text-secondary text-sm leading-relaxed">
-                    {step.description}
-                  </p>
+                  <h3 className="text-skin-text font-semibold mb-2">{step.title}</h3>
+                  <p className="text-skin-text-secondary text-sm leading-relaxed">{step.description}</p>
                 </div>
               </div>
             ))}
@@ -397,40 +377,40 @@ export default function LandingPage() {
       {/* ── Consultants ── */}
       <section id="consultants" className="py-24 px-6 bg-skin-secondary">
         <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-skin-text mb-4">
-              Meet our financial consultants
-            </h2>
-            <p className="text-skin-text-secondary text-lg max-w-2xl mx-auto">
-              Get personalized advice from verified experts or let our AI guide
-              you through your financial journey.
-            </p>
+          <div ref={consultantsRef}>
+            <SectionHeader
+              eyebrow="Expert guidance"
+              title="Meet our financial consultants"
+              subtitle="Get personalized advice from verified experts or let our AI guide you through your financial journey."
+              inView={consultantsInView}
+            />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
             {consultants.length > 0
-              ? consultants.map((c) => (
-                  <Card key={c.consultant_id} hover={true}>
-                    <div className="flex items-center gap-4 mb-4">
-                      <div className="w-12 h-12 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center flex-shrink-0">
-                        <span className="text-emerald-500 text-lg font-bold">
-                          {c.first_name?.[0]?.toUpperCase()}
-                        </span>
+              ? consultants.map((c, i) => (
+                  <div
+                    key={c.consultant_id}
+                    className={`reveal ${consultantsInView ? "in-view" : ""} ${staggerClass[i]}`}
+                  >
+                    <Card hover={true} className="h-full">
+                      <div className="flex items-center gap-4 mb-4">
+                        <div className="w-12 h-12 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center flex-shrink-0">
+                          <span className="text-emerald-500 text-lg font-bold">
+                            {c.first_name?.[0]?.toUpperCase()}
+                          </span>
+                        </div>
+                        <div>
+                          <p className="text-skin-text font-semibold">{c.first_name} {c.last_name}</p>
+                          <p className="text-skin-text-muted text-xs">{c.email}</p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-skin-text font-semibold">
-                          {c.first_name} {c.last_name}
-                        </p>
-                        <p className="text-skin-text-muted text-xs">
-                          {c.email}
-                        </p>
-                      </div>
-                    </div>
-                    <span className="inline-block bg-skin-hover text-skin-text-secondary text-xs px-3 py-1 rounded-full border border-skin-border mb-3">
-                      {c.specialization}
-                    </span>
-                    <StarRating rating={c.rating} />
-                  </Card>
+                      <span className="inline-block bg-skin-hover text-skin-text-secondary text-xs px-3 py-1 rounded-full border border-skin-border mb-3">
+                        {c.specialization}
+                      </span>
+                      <StarRating rating={c.rating} />
+                    </Card>
+                  </div>
                 ))
               : [1, 2, 3].map((i) => (
                   <Card key={i} className="animate-pulse">
@@ -446,16 +426,15 @@ export default function LandingPage() {
                 ))}
           </div>
 
-          <div className="text-center mb-12">
+          <div className={`reveal ${consultantsInView ? "in-view" : ""} stagger-4 text-center mb-12`}>
             <Button variant="outline" onClick={() => navigate("/register")}>
               View all consultants →
             </Button>
           </div>
 
           {/* ── Dual CTA banner ── */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* For users */}
-            <div className="flex flex-col gap-3 bg-skin-card border border-skin-border rounded-2xl p-6">
+          <div ref={dualCtaRef} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className={`reveal ${dualCtaInView ? "in-view" : ""} stagger-1 flex flex-col gap-3 bg-skin-card border border-skin-border rounded-2xl p-6`}>
               <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-500">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="1.75" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 0 1-2.555-.337A5.972 5.972 0 0 1 5.41 20.97a5.969 5.969 0 0 1-.474-.065 4.48 4.48 0 0 0 .978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25Z" />
@@ -472,8 +451,7 @@ export default function LandingPage() {
               </Button>
             </div>
 
-            {/* For consultants */}
-            <div className="flex flex-col gap-3 bg-skin-card border border-emerald-500/30 rounded-2xl p-6">
+            <div className={`reveal ${dualCtaInView ? "in-view" : ""} stagger-2 flex flex-col gap-3 bg-skin-card border border-emerald-500/30 rounded-2xl p-6`}>
               <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-500">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="1.75" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 14.15v4.25c0 1.094-.787 2.036-1.872 2.18-2.087.277-4.216.42-6.378.42s-4.291-.143-6.378-.42c-1.085-.144-1.872-1.086-1.872-2.18v-4.25m16.5 0a2.18 2.18 0 0 0 .75-1.661V8.706c0-1.081-.768-2.015-1.837-2.175a48.114 48.114 0 0 0-3.413-.387m4.5 8.006c-.194.165-.42.295-.673.38A23.978 23.978 0 0 1 12 15.75c-2.648 0-5.195-.429-7.577-1.22a2.016 2.016 0 0 1-.673-.38m0 0A2.18 2.18 0 0 1 3 12.489V8.706c0-1.081.768-2.015 1.837-2.175a48.111 48.111 0 0 1 3.413-.387m7.5 0V5.25A2.25 2.25 0 0 0 13.5 3h-3a2.25 2.25 0 0 0-2.25 2.25v.894m7.5 0a48.667 48.667 0 0 0-7.5 0M12 12.75h.008v.008H12v-.008Z" />
@@ -495,36 +473,31 @@ export default function LandingPage() {
 
       {/* ── CTA Banner ── */}
       <section className="py-24 px-6 bg-skin-base">
-        <div className="max-w-4xl mx-auto">
-          <div className="relative bg-emerald-500/5 border border-emerald-500/20 rounded-3xl p-12 text-center overflow-hidden">
+        <div ref={ctaRef} className="max-w-4xl mx-auto">
+          <div className={`reveal ${ctaInView ? "in-view" : ""} relative bg-emerald-500/5 border border-emerald-500/20 rounded-3xl p-12 text-center overflow-hidden`}>
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-32 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
             <div className="relative">
-              <h2 className="text-3xl md:text-4xl font-bold text-skin-text mb-4">
+              <h2 className={`reveal ${ctaInView ? "in-view" : ""} stagger-2 text-3xl md:text-4xl font-bold text-skin-text mb-4`}>
                 Ready to take control?
               </h2>
-              <p className="text-skin-text-secondary text-lg mb-8 max-w-xl mx-auto">
-                Join FinHub today and start making smarter financial decisions —
-                for free.
+              <p className={`reveal ${ctaInView ? "in-view" : ""} stagger-3 text-skin-text-secondary text-lg mb-8 max-w-xl mx-auto`}>
+                Join FinHub today and start making smarter financial decisions — for free.
               </p>
-              <Button
-                variant="primary"
-                size="lg"
-                onClick={() => navigate("/register")}
-                icon={
-                  <svg
-                    className="w-4 h-4"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.5"
-                    viewBox="0 0 24 24"
-                  >
-                    <path d="M5 12h14M12 5l7 7-7 7" />
-                  </svg>
-                }
-                iconPosition="right"
-              >
-                Create your free account
-              </Button>
+              <div className={`reveal ${ctaInView ? "in-view" : ""} stagger-4`}>
+                <Button
+                  variant="primary"
+                  size="lg"
+                  onClick={() => navigate("/register")}
+                  icon={
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                      <path d="M5 12h14M12 5l7 7-7 7" />
+                    </svg>
+                  }
+                  iconPosition="right"
+                >
+                  Create your free account
+                </Button>
+              </div>
             </div>
           </div>
         </div>
@@ -545,6 +518,7 @@ export default function LandingPage() {
           </p>
         </div>
       </footer>
+
     </div>
   );
 }

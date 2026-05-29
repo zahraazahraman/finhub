@@ -16,3 +16,6 @@ Thumbs.db
 
 # GEMINI API key
 backend/.env
+
+# Presentation build
+presentation/
