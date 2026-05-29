@@ -1,10 +1,10 @@
 <?php
 class Mailer {
-    public static function send(string $toEmail, string $toName, string $subject, string $html): bool {
+    public static function send(string $toEmail, string $toName, string $subject, string $html, string $replyTo = ''): bool {
         $token = $_ENV['MAILTRAP_API_TOKEN'] ?? '';
         if (empty($token)) return false;
 
-        $payload = json_encode([
+        $data = [
             'from'    => [
                 'email' => $_ENV['MAIL_FROM'] ?? 'noreply@finhubapp.app',
                 'name'  => 'FinHub',
@@ -12,7 +12,13 @@ class Mailer {
             'to'      => [['email' => $toEmail, 'name' => $toName]],
             'subject' => $subject,
             'html'    => $html,
-        ]);
+        ];
+
+        if (!empty($replyTo)) {
+            $data['reply_to'] = ['email' => $replyTo];
+        }
+
+        $payload = json_encode($data);
 
         $ch = curl_init('https://send.api.mailtrap.io/api/send');
         curl_setopt_array($ch, [

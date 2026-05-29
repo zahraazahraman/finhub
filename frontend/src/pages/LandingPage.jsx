@@ -188,8 +188,38 @@ export default function LandingPage() {
   const [featuresRef, featuresInView]       = useInView();
   const [stepsRef, stepsInView]             = useInView();
   const [consultantsRef, consultantsInView] = useInView();
-  const [ctaRef, ctaInView]                                 = useInView();
-  const [dualCtaRef, dualCtaInView]                         = useInView();
+  const [ctaRef, ctaInView]                 = useInView();
+  const [dualCtaRef, dualCtaInView]         = useInView();
+  const [contactRef, contactInView]         = useInView();
+
+  /* contact form state */
+  const [contactForm, setContactForm]     = useState({ name: "", email: "", message: "" });
+  const [contactStatus, setContactStatus] = useState("idle"); // idle | sending | success | error
+  const [contactError, setContactError]   = useState("");
+
+  const handleContactChange = (e) => {
+    setContactForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+
+  const handleContactSubmit = async (e) => {
+    e.preventDefault();
+    setContactStatus("sending");
+    setContactError("");
+    try {
+      const res  = await fetch("/api/public/contact", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify(contactForm),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Something went wrong.");
+      setContactStatus("success");
+      setContactForm({ name: "", email: "", message: "" });
+    } catch (err) {
+      setContactStatus("error");
+      setContactError(err.message);
+    }
+  };
 
 
   return (
@@ -221,7 +251,7 @@ export default function LandingPage() {
           </div>
 
           <div className="hidden md:flex items-center gap-8">
-            {["Features", "How it works", "Consultants"].map((item) => (
+            {["Features", "How it works", "Consultants", "Contact"].map((item) => (
               <a
                 key={item}
                 href={`#${item.toLowerCase().replace(/ /g, "-")}`}
@@ -499,6 +529,106 @@ export default function LandingPage() {
                 </Button>
               </div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Contact ── */}
+      <section id="contact" className="py-24 px-6 bg-skin-secondary">
+        <div className="max-w-2xl mx-auto">
+          <div ref={contactRef}>
+            <SectionHeader
+              eyebrow="Get in touch"
+              title="Contact us"
+              subtitle="Have a question or feedback? We'd love to hear from you."
+              inView={contactInView}
+            />
+          </div>
+
+          <div className={`reveal ${contactInView ? "in-view" : ""} stagger-4`}>
+            {contactStatus === "success" ? (
+              <div className="text-center py-16">
+                <div className="w-16 h-16 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-7 h-7 text-emerald-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                  </svg>
+                </div>
+                <h3 className="text-skin-text font-semibold text-lg mb-2">Message sent!</h3>
+                <p className="text-skin-text-secondary text-sm mb-6">We'll get back to you as soon as possible.</p>
+                <Button variant="outline" size="sm" onClick={() => setContactStatus("idle")}>
+                  Send another message
+                </Button>
+              </div>
+            ) : (
+              <form onSubmit={handleContactSubmit} className="space-y-4">
+                <div className={`reveal ${contactInView ? "in-view" : ""} stagger-4 grid grid-cols-1 sm:grid-cols-2 gap-4`}>
+                  <div>
+                    <label className="block text-sm font-medium text-skin-text mb-1.5">Name</label>
+                    <input
+                      type="text"
+                      name="name"
+                      value={contactForm.name}
+                      onChange={handleContactChange}
+                      placeholder="Your name"
+                      required
+                      className="w-full px-4 py-2.5 rounded-xl bg-skin-card border border-skin-border text-skin-text placeholder:text-skin-text-muted text-sm focus:outline-none focus:border-emerald-500/50 transition-colors duration-150"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-skin-text mb-1.5">Email</label>
+                    <input
+                      type="email"
+                      name="email"
+                      value={contactForm.email}
+                      onChange={handleContactChange}
+                      placeholder="your@email.com"
+                      required
+                      className="w-full px-4 py-2.5 rounded-xl bg-skin-card border border-skin-border text-skin-text placeholder:text-skin-text-muted text-sm focus:outline-none focus:border-emerald-500/50 transition-colors duration-150"
+                    />
+                  </div>
+                </div>
+
+                <div className={`reveal ${contactInView ? "in-view" : ""} stagger-5`}>
+                  <label className="block text-sm font-medium text-skin-text mb-1.5">Message</label>
+                  <textarea
+                    name="message"
+                    value={contactForm.message}
+                    onChange={handleContactChange}
+                    placeholder="Tell us how we can help..."
+                    required
+                    rows={5}
+                    className="w-full px-4 py-2.5 rounded-xl bg-skin-card border border-skin-border text-skin-text placeholder:text-skin-text-muted text-sm focus:outline-none focus:border-emerald-500/50 transition-colors duration-150 resize-none"
+                  />
+                </div>
+
+                {contactStatus === "error" && (
+                  <p className="text-red-500 text-sm">{contactError}</p>
+                )}
+
+                <div className={`reveal ${contactInView ? "in-view" : ""} stagger-6`}>
+                  <Button
+                    variant="primary"
+                    type="submit"
+                    disabled={contactStatus === "sending"}
+                    icon={
+                      contactStatus === "sending" ? (
+                        <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                        </svg>
+                      ) : (
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                          <path d="M5 12h14M12 5l7 7-7 7" />
+                        </svg>
+                      )
+                    }
+                    iconPosition="right"
+                  >
+                    {contactStatus === "sending" ? "Sending..." : "Send message"}
+                  </Button>
+                </div>
+              </form>
+            )}
           </div>
         </div>
       </section>

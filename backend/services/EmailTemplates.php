@@ -647,4 +647,48 @@ class EmailTemplates {
     </html>";
   }
 
+  public static function contactMessage(string $name, string $email, string $message): string {
+    return "
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset='UTF-8'>
+        <meta name='viewport' content='width=device-width'>
+      </head>
+      <body style='margin:0;padding:32px 16px;background:#f8fafc;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;'>
+        <div style='max-width:520px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);'>
+
+          <div style='background:#16a34a;padding:28px 32px;'>
+            <div style='font-size:20px;font-weight:700;color:#fff;letter-spacing:-0.5px;'>FinHub</div>
+            <div style='font-size:13px;color:#bbf7d0;margin-top:3px;'>New Contact Message</div>
+          </div>
+
+          <div style='padding:36px 32px;'>
+            <h2 style='margin:0 0 20px;font-size:18px;color:#0f172a;font-weight:700;'>You have a new message</h2>
+
+            <div style='background:#f8fafc;border-radius:10px;padding:20px 24px;margin-bottom:20px;'>
+              <p style='margin:0 0 6px;font-size:12px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;'>From</p>
+              <p style='margin:0;font-size:15px;font-weight:600;color:#0f172a;'>{$name}</p>
+              <p style='margin:4px 0 0;font-size:13px;color:#64748b;'>{$email}</p>
+            </div>
+
+            <div style='background:#f8fafc;border-radius:10px;padding:20px 24px;'>
+              <p style='margin:0 0 12px;font-size:12px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;'>Message</p>
+              <p style='margin:0;font-size:14px;color:#1e293b;line-height:1.7;'>{$message}</p>
+            </div>
+
+            <p style='margin:24px 0 0;font-size:12px;color:#94a3b8;'>
+              Reply directly to this email to respond to {$name}.
+            </p>
+          </div>
+
+          <div style='padding:20px 32px;border-top:1px solid #f1f5f9;text-align:center;'>
+            <p style='margin:0;font-size:12px;color:#94a3b8;'>FinHub · contact@finhubapp.app</p>
+          </div>
+
+        </div>
+      </body>
+    </html>";
+  }
+
 }
