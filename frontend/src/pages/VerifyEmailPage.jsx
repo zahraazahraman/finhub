@@ -40,6 +40,7 @@ export default function VerifyEmailPage() {
   const [loading, setLoading]   = useState(false);
   const [error, setError]       = useState("");
   const [success, setSuccess]   = useState("");
+  const [isVerified, setIsVerified] = useState(false);
 
   // Resend cooldown (60 seconds)
   const [cooldown, setCooldown] = useState(0);
@@ -109,6 +110,7 @@ export default function VerifyEmailPage() {
     const { ok, data } = await VerifyEmailDAL.verify(email, code);
 
     if (data.success) {
+      setIsVerified(true);
       setSuccess("Email verified! Redirecting…");
       login(data.user);
       setTimeout(() => navigate("/dashboard", { replace: true }), 800);
@@ -248,7 +250,7 @@ export default function VerifyEmailPage() {
                   autoFocus={i === 0}
                   onChange={(e) => handleDigitChange(i, e.target.value)}
                   onKeyDown={(e) => handleKeyDown(i, e)}
-                  disabled={loading || !!success}
+                  disabled={loading || isVerified}
                   className={`
                     w-full aspect-square max-w-[52px] text-center text-xl font-bold rounded-xl
                     border bg-skin-input text-skin-text
@@ -269,7 +271,7 @@ export default function VerifyEmailPage() {
             {/* Verify button */}
             <button
               onClick={() => handleVerify()}
-              disabled={loading || !!success || digits.join("").length < 6}
+              disabled={loading || isVerified || digits.join("").length < 6}
               className="
                 w-full flex items-center justify-center gap-2
                 px-4 py-3 rounded-xl text-sm font-semibold
