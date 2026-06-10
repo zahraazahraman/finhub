@@ -20,6 +20,7 @@ import ForgotPasswordPage from "./pages/ForgotPasswordPage.jsx";
 import ResetPasswordPage from "./pages/ResetPasswordPage.jsx";
 import ConsultantLoginPage from "./pages/ConsultantLoginPage.jsx";
 import ConsultantChangePasswordPage from "./pages/ConsultantChangePasswordPage.jsx";
+import DemoLoginPage from "./pages/DemoLoginPage.jsx";
 
 // Admin pages
 import AdminLayout from "./components/layout/AdminLayout.jsx";
@@ -70,6 +71,7 @@ export default function App() {
                     <Route path="/admin/reset-password" element={<ResetPasswordPage role="admin" />} />
                     <Route path="/consultant/login" element={<ConsultantLoginPage />} />
                     <Route path="/consultant/change-password" element={<ConsultantChangePasswordPage />} />
+                    <Route path="/demo" element={<DemoLoginPage />} />
 
                     {/* Admin - protected */}
                     <Route

@@ -98,6 +98,11 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: () => '/FinHub/backend/ws/auth/sync-timezone.php',
       },
+      "/api/auth/demo-login": {
+        target: "http://localhost",
+        changeOrigin: true,
+        rewrite: () => '/FinHub/backend/ws/auth/demo-login.php',
+      },
       "/api/profile": {
         target: "http://localhost",
         changeOrigin: true,
