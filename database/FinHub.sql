@@ -595,7 +595,7 @@ CREATE TABLE `Users` (
   `phone_number` varchar(30) DEFAULT NULL,
   `preferred_currency_id` int(11) DEFAULT 1,
   `ai_tone` enum('simple','professional') NOT NULL DEFAULT 'professional',
-  `ai_data_sharing` tinyint(1) NOT NULL DEFAULT 1,
+  `ai_data_sharing` tinyint(1) NOT NULL DEFAULT 0,
   `weekly_summary_enabled` tinyint(1) NOT NULL DEFAULT 1,
   `status` enum('active','inactive','suspended') DEFAULT 'active',
   `email_verified` tinyint(1) DEFAULT 0,

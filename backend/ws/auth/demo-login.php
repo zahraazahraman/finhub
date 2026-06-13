@@ -34,7 +34,7 @@ try {
         'email'                  => $user['email'],
         'preferred_currency_id'  => (int) ($user['preferred_currency_id'] ?? 1),
         'ai_tone'                => $user['ai_tone']               ?? 'professional',
-        'ai_data_sharing'        => (int) ($user['ai_data_sharing']        ?? 1),
+        'ai_data_sharing'        => (int) ($user['ai_data_sharing']        ?? 0),
         'weekly_summary_enabled' => (int) ($user['weekly_summary_enabled'] ?? 1),
         'timezone'               => $user['timezone']              ?? 'UTC',
     ];

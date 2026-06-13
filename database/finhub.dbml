@@ -1,0 +1,323 @@
+// FinHub Database Schema
+// Generated for ERD — dbdiagram.io compatible
+
+// ─── USER & ACCOUNT MANAGEMENT ───────────────────────────────────────────────
+
+Table Users {
+  user_id                   int          [pk, increment]
+  first_name                varchar(100)
+  last_name                 varchar(100)
+  email                     varchar(255) [unique, not null]
+  password_hash             varchar(255) [not null]
+  phone_number              varchar(30)
+  preferred_currency_id     int          [default: 1]
+  ai_tone                   enum('simple','professional') [default: 'professional']
+  ai_data_sharing           tinyint      [default: 0]
+  weekly_summary_enabled    tinyint      [default: 1]
+  status                    enum('active','inactive','suspended') [default: 'active']
+  email_verified            tinyint      [default: 0]
+  verification_code         varchar(6)
+  verification_code_expires_at datetime
+  created_at                timestamp    [default: `current_timestamp()`]
+  timezone                  varchar(50)  [default: 'UTC']
+  reset_token               varchar(255)
+  reset_token_expires_at    datetime
+}
+
+Table Admins {
+  admin_id                  int          [pk, increment]
+  email                     varchar(255) [unique, not null]
+  password_hash             varchar(255) [not null]
+  created_at                timestamp    [default: `current_timestamp()`]
+  reset_token               varchar(255)
+  reset_token_expires_at    datetime
+}
+
+Table Consultants {
+  consultant_id             int          [pk, increment]
+  first_name                varchar(100)
+  last_name                 varchar(100)
+  email                     varchar(255)
+  phone                     varchar(30)
+  specialization            varchar(100)
+  rating                    decimal(2,1)
+  password                  varchar(255)
+  must_change_password      tinyint      [default: 1]
+  application_id            int
+  bio                       text
+  sub_skills                text         [note: 'JSON array']
+  languages                 text         [note: 'JSON array']
+  years_experience          int
+  availability_status       enum('available','busy','unavailable') [default: 'available']
+  fee_structure             text         [note: 'JSON object']
+  is_verified               tinyint      [default: 0]
+  is_featured               tinyint      [default: 0]
+  case_studies              text         [note: 'JSON array']
+}
+
+Table UserSessions {
+  session_id                int          [pk, increment]
+  user_id                   int          [not null]
+  session_token             varchar(255) [not null]
+  created_at                timestamp    [default: `current_timestamp()`]
+  expires_at                timestamp    [not null]
+}
+
+Table Currencies {
+  currency_id               int          [pk, increment]
+  code                      varchar(10)  [unique, not null]
+  name                      varchar(50)
+  symbol                    varchar(10)
+}
+
+// ─── FINANCIAL OPERATIONS ────────────────────────────────────────────────────
+
+Table Accounts {
+  account_id                int          [pk, increment]
+  user_id                   int          [not null]
+  account_name              varchar(100)
+  account_type              enum('bank','cash','credit_card','wallet')
+  currency_id               int
+  balance                   decimal(12,2) [default: 0.00]
+  created_at                timestamp    [default: `current_timestamp()`]
+}
+
+Table Categories {
+  category_id               int          [pk, increment]
+  name                      varchar(100)
+  type                      enum('income','expense')
+  parent_category_id        int
+  user_id                   int
+}
+
+Table Transactions {
+  transaction_id            int          [pk, increment]
+  account_id                int          [not null]
+  category_id               int
+  amount                    decimal(12,2) [not null]
+  transaction_type          enum('income','expense','transfer') [not null]
+  source_type               enum('manual','csv','receipt') [default: 'manual']
+  receipt_image_url         text
+  description               text
+  transaction_date          date         [not null]
+  created_at                timestamp    [default: `current_timestamp()`]
+  updated_at                timestamp
+}
+
+Table Bills {
+  bill_id                   int          [pk, increment]
+  user_id                   int          [not null]
+  name                      varchar(100)
+  amount                    decimal(12,2)
+  due_date                  date
+  recurrence_type           enum('monthly','yearly','none')
+  category_id               int
+  currency_id               int          [not null, default: 1]
+  is_paid                   tinyint      [default: 0]
+  paid_transaction_id       int
+}
+
+Table Reminders {
+  reminder_id               int          [pk, increment]
+  user_id                   int          [not null]
+  bill_id                   int
+  days_before               int          [not null, default: 3]
+  message                   text
+  reminder_date             datetime
+  is_sent                   tinyint      [default: 0]
+}
+
+Table Goals {
+  goal_id                   int          [pk, increment]
+  user_id                   int          [not null]
+  goal_name                 varchar(100)
+  goal_type                 enum('saving','debt_repayment')
+  target_amount             decimal(12,2)
+  current_amount            decimal(12,2) [default: 0.00]
+  deadline                  date
+  created_at                timestamp    [default: `current_timestamp()`]
+  currency_id               int          [not null, default: 1]
+}
+
+Table GoalContributions {
+  contribution_id           int          [pk, increment]
+  goal_id                   int          [not null]
+  account_id                int          [not null]
+  amount                    decimal(12,2) [not null]
+  contribution_date         date         [not null]
+  description               text
+  transaction_id            int
+  created_at                timestamp    [default: `current_timestamp()`]
+  original_amount           decimal(15,2)
+  original_currency_code    varchar(10)
+  exchange_rate             decimal(15,6)
+}
+
+Table Investments {
+  investment_id             int          [pk, increment]
+  user_id                   int          [not null]
+  investment_name           varchar(255) [not null]
+  symbol                    varchar(20)
+  investment_type           enum('stock','crypto','real_estate','other') [not null]
+  quantity                  decimal(15,4)
+  purchase_price            decimal(12,2)
+  current_price             decimal(12,2)
+  currency_id               int
+  purchase_date             date
+  notes                     text
+  created_at                timestamp    [default: `current_timestamp()`]
+}
+
+// ─── CONSULTANT SERVICES ─────────────────────────────────────────────────────
+
+Table ConsultantApplications {
+  application_id            int          [pk, increment]
+  first_name                varchar(100) [not null]
+  last_name                 varchar(100) [not null]
+  email                     varchar(255) [not null]
+  phone                     varchar(50)
+  specialization            varchar(100) [not null]
+  years_experience          int          [default: 0]
+  bio                       text         [not null]
+  motivation                text         [not null]
+  linkedin_url              varchar(255)
+  status                    enum('pending','approved','rejected') [default: 'pending']
+  admin_note                text
+  created_at                timestamp    [default: `current_timestamp()`]
+  reviewed_at               timestamp
+}
+
+Table ConsultantBookings {
+  booking_id                int          [pk, increment]
+  user_id                   int          [not null]
+  consultant_id             int          [not null]
+  booking_date              datetime
+  status                    enum('pending','confirmed','completed','cancelled')
+}
+
+Table ConsultantInquiries {
+  inquiry_id                int          [pk, increment]
+  user_id                   int          [not null]
+  consultant_id             int          [not null]
+  brief_text                text         [note: 'AI-generated financial brief']
+  user_note                 text         [note: 'User-written message']
+  situation_tag             varchar(100)
+  consultant_reply          text
+  replied_at                timestamp
+  status                    enum('pending','responded','closed') [default: 'pending']
+  created_at                timestamp    [default: `current_timestamp()`]
+}
+
+Table ConsultantReviews {
+  review_id                 int          [pk, increment]
+  inquiry_id                int          [unique, not null]
+  user_id                   int          [not null]
+  consultant_id             int          [not null]
+  rating_clarity            tinyint      [not null]
+  rating_responsiveness     tinyint      [not null]
+  rating_actionability      tinyint      [not null]
+  review_text               text
+  created_at                timestamp    [default: `current_timestamp()`]
+}
+
+// ─── PLATFORM ADMINISTRATION ─────────────────────────────────────────────────
+
+Table Notifications {
+  notification_id           int          [pk, increment]
+  user_id                   int          [not null]
+  type                      enum('bill','goal','insight','system','consultant_inquiry','inquiry_response')
+  title                     varchar(200)
+  message                   text
+  is_read                   tinyint      [default: 0]
+  created_at                timestamp    [default: `current_timestamp()`]
+}
+
+Table AdminNotifications {
+  notification_id           int          [pk, increment]
+  type                      enum('user_registered','user_suspended','consultant_added','consultant_deleted','category_added','category_deleted','system','consultant_application')  [default: 'system']
+  title                     varchar(200) [not null]
+  message                   text
+  is_read                   tinyint      [default: 0]
+  created_at                timestamp    [default: `current_timestamp()`]
+}
+
+Table ChatSessions {
+  chat_session_id           int          [pk, increment]
+  user_id                   int          [not null]
+  started_at                timestamp    [default: `current_timestamp()`]
+  ended_at                  timestamp
+}
+
+Table ChatMessages {
+  message_id                int          [pk, increment]
+  chat_session_id           int          [not null]
+  sender_type               enum('user','ai')
+  message_text              text         [note: 'AES-256-GCM encrypted']
+  sent_at                   timestamp    [default: `current_timestamp()`]
+}
+
+Table Insights {
+  insight_id                int          [pk, increment]
+  user_id                   int          [not null]
+  insight_type              enum('spending_pattern','anomaly','suggestion')
+  content                   text
+  generated_at              timestamp    [default: `current_timestamp()`]
+}
+
+Table EmailLogs {
+  email_id                  int          [pk, increment]
+  user_id                   int          [not null]
+  email_type                enum('weekly_summary','reminder','inquiry_notification')
+  sent_at                   timestamp    [default: `current_timestamp()`]
+  status                    enum('sent','failed')
+}
+
+// ─── RELATIONSHIPS ────────────────────────────────────────────────────────────
+
+// Users
+Ref: Users.preferred_currency_id > Currencies.currency_id
+Ref: UserSessions.user_id > Users.user_id
+
+// Accounts & Transactions
+Ref: Accounts.user_id > Users.user_id
+Ref: Accounts.currency_id > Currencies.currency_id
+Ref: Transactions.account_id > Accounts.account_id
+Ref: Transactions.category_id > Categories.category_id
+
+// Categories
+Ref: Categories.user_id > Users.user_id
+Ref: Categories.parent_category_id > Categories.category_id
+
+// Bills & Reminders
+Ref: Bills.user_id > Users.user_id
+Ref: Bills.category_id > Categories.category_id
+Ref: Bills.currency_id > Currencies.currency_id
+Ref: Bills.paid_transaction_id > Transactions.transaction_id
+Ref: Reminders.user_id > Users.user_id
+Ref: Reminders.bill_id > Bills.bill_id
+
+// Goals
+Ref: Goals.user_id > Users.user_id
+Ref: Goals.currency_id > Currencies.currency_id
+Ref: GoalContributions.goal_id > Goals.goal_id
+Ref: GoalContributions.account_id > Accounts.account_id
+
+// Investments
+Ref: Investments.user_id > Users.user_id
+Ref: Investments.currency_id > Currencies.currency_id
+
+// Consultant Services
+Ref: ConsultantBookings.user_id > Users.user_id
+Ref: ConsultantBookings.consultant_id > Consultants.consultant_id
+Ref: ConsultantInquiries.user_id > Users.user_id
+Ref: ConsultantInquiries.consultant_id > Consultants.consultant_id
+Ref: ConsultantReviews.inquiry_id > ConsultantInquiries.inquiry_id
+Ref: ConsultantReviews.user_id > Users.user_id
+Ref: ConsultantReviews.consultant_id > Consultants.consultant_id
+
+// Platform Administration
+Ref: Notifications.user_id > Users.user_id
+Ref: ChatSessions.user_id > Users.user_id
+Ref: ChatMessages.chat_session_id > ChatSessions.chat_session_id
+Ref: Insights.user_id > Users.user_id
+Ref: EmailLogs.user_id > Users.user_id
