@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import { useConsultantAuth } from "../context/ConsultantAuthContext.jsx";
 import ThemeToggle from "../components/common/ThemeToggle.jsx";
 
@@ -130,6 +131,11 @@ export default function ConsultantLoginPage() {
   };
 
   return (
+    <>
+      <Helmet>
+        <title>Consultant | Sign In | FinHub</title>
+        <meta name="robots" content="noindex, nofollow" />
+      </Helmet>
     <div className="min-h-screen bg-skin-base flex flex-col">
       <div className="absolute top-4 right-4">
         <ThemeToggle />
@@ -203,5 +209,6 @@ export default function ConsultantLoginPage() {
         </div>
       </div>
     </div>
+    </>
   );
 }

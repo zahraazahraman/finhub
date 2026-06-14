@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import Button from "../components/ui/Button.jsx";
 import Input from "../components/ui/Input.jsx";
 import Card from "../components/ui/Card.jsx";
@@ -77,6 +78,12 @@ export default function RegisterPage() {
   const lockIcon  = <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>;
 
   return (
+    <>
+      <Helmet>
+        <title>Create Your Account | FinHub</title>
+        <meta name="description" content="Join FinHub to start managing your finances, track your spending, set savings goals, and connect with financial consultants." />
+        <link rel="canonical" href="https://finhubapp.app/register" />
+      </Helmet>
     <div className="min-h-screen bg-skin-base flex transition-colors duration-200">
 
       {/* Left panel */}
@@ -198,5 +205,6 @@ export default function RegisterPage() {
         </div>
       </div>
     </div>
+    </>
   );
 }

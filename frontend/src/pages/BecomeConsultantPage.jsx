@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import ThemeToggle from "../components/common/ThemeToggle.jsx";
 import Button from "../components/ui/Button.jsx";
 
@@ -86,6 +87,15 @@ export default function BecomeConsultantPage() {
   };
 
   return (
+    <>
+      <Helmet>
+        <title>Become a Consultant | FinHub</title>
+        <meta name="description" content="Apply to join FinHub as a certified financial consultant and help users reach their financial goals." />
+        <meta property="og:title" content="Become a Consultant | FinHub" />
+        <meta property="og:description" content="Apply to join FinHub as a certified financial consultant." />
+        <meta property="og:url" content="https://finhubapp.app/become-a-consultant" />
+        <link rel="canonical" href="https://finhubapp.app/become-a-consultant" />
+      </Helmet>
     <div className="min-h-screen bg-skin-base text-skin-text transition-colors duration-200">
 
       {/* ── Navbar ── */}
@@ -342,5 +352,6 @@ export default function BecomeConsultantPage() {
         </div>
       </footer>
     </div>
+    </>
   );
 }

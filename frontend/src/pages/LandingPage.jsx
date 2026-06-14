@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import ThemeToggle from "../components/common/ThemeToggle.jsx";
 import Button from "../components/ui/Button.jsx";
 import Card from "../components/ui/Card.jsx";
@@ -223,6 +224,16 @@ export default function LandingPage() {
 
 
   return (
+    <>
+      <Helmet>
+        <title>FinHub | Personal Finance &amp; Investment Platform</title>
+        <meta name="description" content="FinHub helps you manage budgets, track investments, set savings goals, and connect with certified financial consultants — all in one place." />
+        <meta property="og:title" content="FinHub | Personal Finance & Investment Platform" />
+        <meta property="og:description" content="Manage your finances, track investments, and connect with certified consultants." />
+        <meta property="og:url" content="https://finhubapp.app/" />
+        <meta property="og:type" content="website" />
+        <link rel="canonical" href="https://finhubapp.app/" />
+      </Helmet>
     <div className="min-h-screen bg-skin-base text-skin-text transition-colors duration-200">
 
       {/* ── Navbar ── */}
@@ -650,5 +661,6 @@ export default function LandingPage() {
       </footer>
 
     </div>
+    </>
   );
 }

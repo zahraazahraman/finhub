@@ -1,0 +1,14 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /consultant
+Disallow: /dashboard
+Disallow: /accounts
+Disallow: /goals
+Disallow: /investments
+Disallow: /reminders
+Disallow: /notifications
+Disallow: /profile
+Disallow: /demo
+
+Sitemap: https://finhubapp.app/sitemap.xml

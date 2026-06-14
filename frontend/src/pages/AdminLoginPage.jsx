@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import { useAuth } from "../context/AuthContext.jsx";
 import AuthBLL from "../bll/AuthBLL.js";
 
@@ -123,6 +124,11 @@ export default function AdminLoginPage() {
   };
 
   return (
+    <>
+      <Helmet>
+        <title>Admin | Sign In | FinHub</title>
+        <meta name="robots" content="noindex, nofollow" />
+      </Helmet>
     <div className="min-h-screen bg-skin-base flex transition-colors duration-200">
 
       {/* Left panel */}
@@ -283,5 +289,6 @@ export default function AdminLoginPage() {
         </div>
       </div>
     </div>
+    </>
   );
 }

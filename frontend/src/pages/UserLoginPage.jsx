@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import { useUser } from "../context/UserContext.jsx";
 import Input from "../components/ui/Input.jsx";
 import Button from "../components/ui/Button.jsx";
@@ -87,6 +88,12 @@ export default function UserLoginPage() {
   };
 
   return (
+    <>
+      <Helmet>
+        <title>Sign In | FinHub</title>
+        <meta name="description" content="Sign in to your FinHub account to manage your finances, track investments, and reach your savings goals." />
+        <link rel="canonical" href="https://finhubapp.app/login" />
+      </Helmet>
     <div className="min-h-screen bg-skin-base flex transition-colors duration-200">
 
       {/* Left panel */}
@@ -227,5 +234,6 @@ export default function UserLoginPage() {
         </div>
       </div>
     </div>
+    </>
   );
 }

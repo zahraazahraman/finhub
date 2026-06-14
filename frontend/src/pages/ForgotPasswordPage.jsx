@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import api from "../utils/api.js";
 
 export default function ForgotPasswordPage({ role = "user" }) {
@@ -41,6 +42,11 @@ export default function ForgotPasswordPage({ role = "user" }) {
   };
 
   return (
+    <>
+      <Helmet>
+        <title>{isAdmin ? "Admin | Forgot Password | FinHub" : "Forgot Password | FinHub"}</title>
+        <meta name="robots" content="noindex, nofollow" />
+      </Helmet>
     <div className="min-h-screen bg-skin-base flex items-center justify-center px-4 py-12 transition-colors duration-200">
       <div className="w-full max-w-md">
 
@@ -196,5 +202,6 @@ export default function ForgotPasswordPage({ role = "user" }) {
         </p>
       </div>
     </div>
+    </>
   );
 }
