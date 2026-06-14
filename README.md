@@ -36,9 +36,10 @@ A personal finance management web app that helps users track expenses, manage ac
 | Build Tool | Vite |
 | Backend | PHP 8 (custom REST API) |
 | Database | MySQL |
-| AI | Claude API (receipt parsing) |
-| Email | PHPMailer |
-| Spreadsheet | PhpSpreadsheet |
+| AI | Groq API — Llama 3.3 70B (receipt parsing) |
+| OCR | Tesseract (receipt text extraction) |
+| Email | Mailtrap API |
+| Spreadsheet | PhpSpreadsheet (XLSX transaction import) |
 
 ## Project Structure
 
