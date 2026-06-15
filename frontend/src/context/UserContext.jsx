@@ -27,13 +27,14 @@ export function UserProvider({ children }) {
   }, []);
 
   // Arm the demo block handler whenever a demo session is active.
+  // Keyed on email so it works even if the stored user object predates the is_demo flag.
   useEffect(() => {
-    if (user?.is_demo) {
+    if (user?.email === "demo@finhub.app") {
       setDemoBlockHandler(() => setDemoModalOpen(true));
     } else {
       setDemoBlockHandler(null);
     }
-  }, [user?.is_demo]);
+  }, [user?.email]);
 
   // Silently sync timezone on mount.
   // If the user has moved to a different timezone since their last login
@@ -77,7 +78,7 @@ export function UserProvider({ children }) {
   };
 
   return (
-    <UserContext.Provider value={{ user, login, logout, updateUser, isAuthenticated: !!user, isDemo: !!user?.is_demo }}>
+    <UserContext.Provider value={{ user, login, logout, updateUser, isAuthenticated: !!user, isDemo: user?.email === "demo@finhub.app" }}>
       {children}
       {demoModalOpen && <DemoModal onClose={() => setDemoModalOpen(false)} />}
     </UserContext.Provider>
