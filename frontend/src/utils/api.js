@@ -9,6 +9,28 @@ export function setUnauthorizedHandler(handler) {
   onUnauthorized = handler;
 }
 
+// Injected by UserContext when a demo session is active.
+// Fired instead of making a write request, so demo viewers see the modal.
+let onDemoBlocked = null;
+
+export function setDemoBlockHandler(handler) {
+  onDemoBlocked = handler;
+}
+
+// Write endpoints allowed even in demo mode (AI + auth housekeeping).
+const DEMO_ALLOWED_WRITES = [
+  "/auth/",
+  "/chat",
+  "/investments/analyze",
+  "/investments/update-prices",
+  "/my-notifications",
+];
+
+function isDemoBlocked(endpoint, method) {
+  if (method === "GET" || !onDemoBlocked) return false;
+  return !DEMO_ALLOWED_WRITES.some((prefix) => endpoint.startsWith(prefix));
+}
+
 async function request(endpoint, options = {}) {
   const config = {
     credentials: "include",
@@ -21,6 +43,11 @@ async function request(endpoint, options = {}) {
 
   if (config.body && typeof config.body === "object" && !(config.body instanceof FormData)) {
     config.body = JSON.stringify(config.body);
+  }
+
+  if (isDemoBlocked(endpoint, config.method ?? "GET")) {
+    onDemoBlocked();
+    return { ok: false, status: 403, data: { demo: true } };
   }
 
   try {

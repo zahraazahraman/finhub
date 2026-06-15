@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, useRef } from "react";
-import { setUnauthorizedHandler } from "../utils/api";
+import { setUnauthorizedHandler, setDemoBlockHandler } from "../utils/api";
 import api from "../utils/api";
+import DemoModal from "../components/common/DemoModal.jsx";
 
 const UserContext = createContext(null);
 
@@ -8,6 +9,7 @@ export function UserProvider({ children }) {
   const [user, setUser] = useState(
     () => JSON.parse(localStorage.getItem("finhub_user")) || null
   );
+  const [demoModalOpen, setDemoModalOpen] = useState(false);
 
   const userRef = useRef(user);
   useEffect(() => {
@@ -23,6 +25,15 @@ export function UserProvider({ children }) {
       window.location.href = "/login";
     });
   }, []);
+
+  // Arm the demo block handler whenever a demo session is active.
+  useEffect(() => {
+    if (user?.is_demo) {
+      setDemoBlockHandler(() => setDemoModalOpen(true));
+    } else {
+      setDemoBlockHandler(null);
+    }
+  }, [user?.is_demo]);
 
   // Silently sync timezone on mount.
   // If the user has moved to a different timezone since their last login
@@ -66,8 +77,9 @@ export function UserProvider({ children }) {
   };
 
   return (
-    <UserContext.Provider value={{ user, login, logout, updateUser, isAuthenticated: !!user }}>
+    <UserContext.Provider value={{ user, login, logout, updateUser, isAuthenticated: !!user, isDemo: !!user?.is_demo }}>
       {children}
+      {demoModalOpen && <DemoModal onClose={() => setDemoModalOpen(false)} />}
     </UserContext.Provider>
   );
 }

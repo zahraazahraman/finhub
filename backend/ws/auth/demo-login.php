@@ -37,6 +37,7 @@ try {
         'ai_data_sharing'        => (int) ($user['ai_data_sharing']        ?? 0),
         'weekly_summary_enabled' => (int) ($user['weekly_summary_enabled'] ?? 1),
         'timezone'               => $user['timezone']              ?? 'UTC',
+        'is_demo'                => true,
     ];
 
     // Short-lived token — valid for the presentation window only (24 hours)
