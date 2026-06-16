@@ -102,6 +102,7 @@ export default function Accounts() {
         : a
     ));
     setShowAddTx(false);
+    setReceiptData(null);
   };
 
   const handleImported = async () => {
