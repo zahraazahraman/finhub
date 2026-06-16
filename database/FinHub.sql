@@ -34,7 +34,8 @@ CREATE TABLE `Accounts` (
   `account_type` enum('bank','cash','credit_card','wallet') DEFAULT NULL,
   `currency_id` int(11) DEFAULT NULL,
   `balance` decimal(12,2) DEFAULT 0.00,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `deleted_at` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --

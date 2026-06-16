@@ -13,7 +13,7 @@ class AccountDAL {
             "SELECT a.*, c.code AS currency_code, c.symbol AS currency_symbol
              FROM Accounts a
              LEFT JOIN Currencies c ON a.currency_id = c.currency_id
-             WHERE a.user_id = :user_id
+             WHERE a.user_id = :user_id AND a.deleted_at IS NULL
              ORDER BY a.created_at DESC"
         );
         $stmt->execute([':user_id' => $userId]);
@@ -25,7 +25,7 @@ class AccountDAL {
             "SELECT a.*, c.code AS currency_code, c.symbol AS currency_symbol
              FROM Accounts a
              LEFT JOIN Currencies c ON a.currency_id = c.currency_id
-             WHERE a.account_id = :account_id
+             WHERE a.account_id = :account_id AND a.deleted_at IS NULL
              LIMIT 1"
         );
         $stmt->execute([':account_id' => $accountId]);
@@ -48,15 +48,8 @@ class AccountDAL {
     }
 
     public function delete(int $accountId): void {
-        // Delete linked transactions first
         $stmt = $this->db->prepare(
-            "DELETE FROM Transactions WHERE account_id = :account_id"
-        );
-        $stmt->execute([':account_id' => $accountId]);
-
-        // Then delete the account
-        $stmt = $this->db->prepare(
-            "DELETE FROM Accounts WHERE account_id = :account_id"
+            "UPDATE Accounts SET deleted_at = NOW() WHERE account_id = :account_id"
         );
         $stmt->execute([':account_id' => $accountId]);
     }
