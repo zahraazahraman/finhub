@@ -1,4 +1,5 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { lazy, Suspense } from "react";
+import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext.jsx";
 import { NotificationProvider } from "./context/NotificationContext.jsx";
 import { UserProvider } from "./context/UserContext.jsx";
@@ -10,43 +11,43 @@ import UserProtectedRoute from "./components/common/UserProtectedRoute.jsx";
 import ConsultantProtectedRoute from "./components/common/ConsultantProtectedRoute.jsx";
 
 // Public pages
-import LandingPage from "./pages/LandingPage.jsx";
-import BecomeConsultantPage from "./pages/BecomeConsultantPage.jsx";
-import AdminLoginPage from "./pages/AdminLoginPage.jsx";
-import RegisterPage from "./pages/RegisterPage.jsx";
-import UserLoginPage from "./pages/UserLoginPage.jsx";
-import VerifyEmailPage from "./pages/VerifyEmailPage.jsx";
-import ForgotPasswordPage from "./pages/ForgotPasswordPage.jsx";
-import ResetPasswordPage from "./pages/ResetPasswordPage.jsx";
-import ConsultantLoginPage from "./pages/ConsultantLoginPage.jsx";
-import ConsultantChangePasswordPage from "./pages/ConsultantChangePasswordPage.jsx";
-import DemoLoginPage from "./pages/DemoLoginPage.jsx";
+const LandingPage = lazy(() => import("./pages/LandingPage.jsx"));
+const BecomeConsultantPage = lazy(() => import("./pages/BecomeConsultantPage.jsx"));
+const AdminLoginPage = lazy(() => import("./pages/AdminLoginPage.jsx"));
+const RegisterPage = lazy(() => import("./pages/RegisterPage.jsx"));
+const UserLoginPage = lazy(() => import("./pages/UserLoginPage.jsx"));
+const VerifyEmailPage = lazy(() => import("./pages/VerifyEmailPage.jsx"));
+const ForgotPasswordPage = lazy(() => import("./pages/ForgotPasswordPage.jsx"));
+const ResetPasswordPage = lazy(() => import("./pages/ResetPasswordPage.jsx"));
+const ConsultantLoginPage = lazy(() => import("./pages/ConsultantLoginPage.jsx"));
+const ConsultantChangePasswordPage = lazy(() => import("./pages/ConsultantChangePasswordPage.jsx"));
+const DemoLoginPage = lazy(() => import("./pages/DemoLoginPage.jsx"));
 
 // Admin pages
-import AdminLayout from "./components/layout/AdminLayout.jsx";
-import Dashboard from "./admin/Dashboard.jsx";
-import Users from "./admin/Users.jsx";
-import Consultants from "./admin/Consultants.jsx";
-import ConsultantApplications from "./admin/ConsultantApplications.jsx";
-import Categories from "./admin/Categories.jsx";
-import AdminNotifications from "./admin/AdminNotifications.jsx";
-import UserNotifications from "./admin/UserNotifications.jsx";
+const AdminLayout = lazy(() => import("./components/layout/AdminLayout.jsx"));
+const Dashboard = lazy(() => import("./admin/Dashboard.jsx"));
+const Users = lazy(() => import("./admin/Users.jsx"));
+const Consultants = lazy(() => import("./admin/Consultants.jsx"));
+const ConsultantApplications = lazy(() => import("./admin/ConsultantApplications.jsx"));
+const Categories = lazy(() => import("./admin/Categories.jsx"));
+const AdminNotifications = lazy(() => import("./admin/AdminNotifications.jsx"));
+const UserNotifications = lazy(() => import("./admin/UserNotifications.jsx"));
 
 // Consultant pages
-import ConsultantLayout from "./components/layout/ConsultantLayout.jsx";
-import ConsultantDashboard from "./consultant/ConsultantDashboard.jsx";
-import ConsultantInquiries from "./consultant/ConsultantInquiries.jsx";
+const ConsultantLayout = lazy(() => import("./components/layout/ConsultantLayout.jsx"));
+const ConsultantDashboard = lazy(() => import("./consultant/ConsultantDashboard.jsx"));
+const ConsultantInquiries = lazy(() => import("./consultant/ConsultantInquiries.jsx"));
 
 // User pages
-import UserLayout from "./components/layout/UserLayout.jsx";
-import UserDashboard from "./user/UserDashboard.jsx";
-import Accounts from "./user/Accounts.jsx";
-import Goals from "./user/Goals.jsx";
-import Investments from "./user/Investments.jsx";
-import UserConsultants from "./user/UserConsultants.jsx";
-import Reminders from "./user/Reminders.jsx";
-import UserNotificationsPage from "./user/UserNotificationsPage.jsx";
-import Profile from "./user/Profile.jsx";
+const UserLayout = lazy(() => import("./components/layout/UserLayout.jsx"));
+const UserDashboard = lazy(() => import("./user/UserDashboard.jsx"));
+const Accounts = lazy(() => import("./user/Accounts.jsx"));
+const Goals = lazy(() => import("./user/Goals.jsx"));
+const Investments = lazy(() => import("./user/Investments.jsx"));
+const UserConsultants = lazy(() => import("./user/UserConsultants.jsx"));
+const Reminders = lazy(() => import("./user/Reminders.jsx"));
+const UserNotificationsPage = lazy(() => import("./user/UserNotificationsPage.jsx"));
+const Profile = lazy(() => import("./user/Profile.jsx"));
 
 export default function App() {
   return (
@@ -56,7 +57,7 @@ export default function App() {
           <NotificationProvider>
             <UserProvider>
               <InvestmentAnalysisProvider>
-                <ConsultantAuthProvider>
+                  <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" /></div>}>
                   <Routes>
                     {/* Public */}
                     <Route path="/" element={<LandingPage />} />
@@ -69,8 +70,6 @@ export default function App() {
                     <Route path="/admin/login" element={<AdminLoginPage />} />
                     <Route path="/admin/forgot-password" element={<ForgotPasswordPage role="admin" />} />
                     <Route path="/admin/reset-password" element={<ResetPasswordPage role="admin" />} />
-                    <Route path="/consultant/login" element={<ConsultantLoginPage />} />
-                    <Route path="/consultant/change-password" element={<ConsultantChangePasswordPage />} />
                     <Route path="/demo" element={<DemoLoginPage />} />
 
                     {/* Admin - protected */}
@@ -92,18 +91,22 @@ export default function App() {
                       <Route path="user-notifications" element={<UserNotifications />} />
                     </Route>
 
-                    {/* Consultant - protected */}
-                    <Route
-                      path="/consultant"
-                      element={
-                        <ConsultantProtectedRoute>
-                          <ConsultantLayout />
-                        </ConsultantProtectedRoute>
-                      }
-                    >
-                      <Route index element={<Navigate to="dashboard" replace />} />
-                      <Route path="dashboard" element={<ConsultantDashboard />} />
-                      <Route path="inquiries" element={<ConsultantInquiries />} />
+                    {/* Consultant - auth context scoped here so it only fires on /consultant/* */}
+                    <Route element={<ConsultantAuthProvider><Outlet /></ConsultantAuthProvider>}>
+                      <Route path="/consultant/login" element={<ConsultantLoginPage />} />
+                      <Route path="/consultant/change-password" element={<ConsultantChangePasswordPage />} />
+                      <Route
+                        path="/consultant"
+                        element={
+                          <ConsultantProtectedRoute>
+                            <ConsultantLayout />
+                          </ConsultantProtectedRoute>
+                        }
+                      >
+                        <Route index element={<Navigate to="dashboard" replace />} />
+                        <Route path="dashboard" element={<ConsultantDashboard />} />
+                        <Route path="inquiries" element={<ConsultantInquiries />} />
+                      </Route>
                     </Route>
 
                     {/* User - protected */}
@@ -128,7 +131,7 @@ export default function App() {
                     {/* Fallback */}
                     <Route path="*" element={<Navigate to="/" replace />} />
                   </Routes>
-                </ConsultantAuthProvider>
+                  </Suspense>
               </InvestmentAnalysisProvider>
             </UserProvider>
           </NotificationProvider>
