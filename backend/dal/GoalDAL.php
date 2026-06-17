@@ -51,6 +51,11 @@ class GoalDAL {
 
     public function delete(int $goalId): void {
         $stmt = $this->db->prepare(
+            "DELETE FROM GoalContributions WHERE goal_id = :goal_id"
+        );
+        $stmt->execute([':goal_id' => $goalId]);
+
+        $stmt = $this->db->prepare(
             "DELETE FROM Goals WHERE goal_id = :goal_id"
         );
         $stmt->execute([':goal_id' => $goalId]);
