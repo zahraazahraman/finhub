@@ -290,7 +290,9 @@ CREATE TABLE `Consultants` (
   `email` varchar(255) DEFAULT NULL,
   `phone` varchar(30) DEFAULT NULL,
   `specialization` varchar(100) DEFAULT NULL,
-  `rating` decimal(2,1) DEFAULT NULL
+  `rating` decimal(2,1) DEFAULT NULL,
+  `reset_token` varchar(64) DEFAULT NULL,
+  `reset_token_expires_at` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
