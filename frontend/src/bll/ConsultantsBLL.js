@@ -39,4 +39,10 @@ export default class ConsultantsBLL {
     if (ok && data.success) return { success: true };
     return { success: false, error: data.message || "Delete failed." };
   }
+
+  static async sendPasswordReset(id) {
+    const { ok, data } = await ConsultantsDAL.sendPasswordReset(id);
+    if (ok && data.success) return { success: true, message: data.message };
+    return { success: false, error: data.message || "Failed to send reset link." };
+  }
 }

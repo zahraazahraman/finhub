@@ -16,4 +16,8 @@ export default class ConsultantsDAL {
   static async delete(id) {
     return await api.delete(`/consultants/${id}`);
   }
+
+  static async sendPasswordReset(id) {
+    return await api.post("/auth/consultant-send-reset", { consultant_id: id });
+  }
 }

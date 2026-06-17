@@ -114,6 +114,7 @@ export default function Consultants() {
   const [modalTarget, setModalTarget]   = useState(undefined);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [actionError, setActionError]   = useState("");
+  const [resettingId, setResettingId]   = useState(null);
   const { refreshCount }                = useNotifications();
 
   const fetchConsultants = async () => {
@@ -125,6 +126,14 @@ export default function Consultants() {
   };
 
   useEffect(() => { fetchConsultants(); }, []);
+
+  const handleSendPasswordReset = async (consultantId) => {
+    setResettingId(consultantId);
+    setActionError("");
+    const result = await ConsultantsBLL.sendPasswordReset(consultantId);
+    setResettingId(null);
+    if (!result.success) setActionError(result.error);
+  };
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
@@ -183,6 +192,27 @@ export default function Consultants() {
       label: "Actions",
       render: (c) => (
         <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            title="Send password reset link"
+            className="text-skin-text-muted hover:text-amber-500 hover:bg-amber-500/10"
+            onClick={() => handleSendPasswordReset(c.consultant_id)}
+            disabled={resettingId === c.consultant_id}
+            icon={
+              resettingId === c.consultant_id ? (
+                <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                </svg>
+              ) : (
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                </svg>
+              )
+            }
+          />
           <Button
             variant="ghost"
             size="sm"
