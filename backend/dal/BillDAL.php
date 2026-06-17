@@ -107,6 +107,9 @@ class BillDAL {
     }
 
     public function delete(int $billId): void {
+        $stmt = $this->db->prepare("DELETE FROM Reminders WHERE bill_id = :bill_id");
+        $stmt->execute([':bill_id' => $billId]);
+
         $stmt = $this->db->prepare("DELETE FROM Bills WHERE bill_id = :bill_id");
         $stmt->execute([':bill_id' => $billId]);
     }
