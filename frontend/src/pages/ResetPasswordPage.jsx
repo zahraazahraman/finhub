@@ -66,9 +66,10 @@ function PasswordInput({ id, label, value, onChange, error, placeholder }) {
 export default function ResetPasswordPage({ role = "user" }) {
   const navigate  = useNavigate();
   const location  = useLocation();
-  const isAdmin   = role === "admin";
-  const endpoint  = isAdmin ? "/auth/admin-reset-password" : "/auth/reset-password";
-  const loginPath = isAdmin ? "/admin/login" : "/login";
+  const isAdmin      = role === "admin";
+  const isConsultant = role === "consultant";
+  const endpoint  = isAdmin ? "/auth/admin-reset-password" : isConsultant ? "/auth/consultant-reset-password" : "/auth/reset-password";
+  const loginPath = isAdmin ? "/admin/login" : isConsultant ? "/consultant/login" : "/login";
 
   const token = new URLSearchParams(location.search).get("token") || "";
 
@@ -155,9 +156,9 @@ export default function ResetPasswordPage({ role = "user" }) {
               <span className="text-skin-text text-xl font-bold">Fin</span>
               <span className="text-emerald-500 text-xl font-bold">Hub</span>
             </div>
-            {isAdmin && (
+            {(isAdmin || isConsultant) && (
               <div className="text-skin-text-muted text-[10px] uppercase tracking-widest font-medium -mt-0.5">
-                Admin Portal
+                {isAdmin ? "Admin Portal" : "Consultant Portal"}
               </div>
             )}
           </div>
@@ -231,7 +232,7 @@ export default function ResetPasswordPage({ role = "user" }) {
             <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
               <path d="M19 12H5M12 5l-7 7 7 7" />
             </svg>
-            Back to {isAdmin ? "Admin " : ""}Sign In
+            Back to {isAdmin ? "Admin " : isConsultant ? "Consultant " : ""}Sign In
           </Link>
         </div>
 

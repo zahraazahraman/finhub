@@ -201,7 +201,13 @@ export default function ConsultantLoginPage() {
               </button>
             </form>
 
-            <p className="text-center text-skin-text-muted text-xs mt-6">
+            <div className="text-center mt-4">
+              <Link to="/consultant/forgot-password" className="text-xs text-emerald-500 hover:text-emerald-400 transition-colors duration-150">
+                Forgot your password?
+              </Link>
+            </div>
+
+            <p className="text-center text-skin-text-muted text-xs mt-4">
               Not a consultant?{" "}
               <Link to="/" className="text-emerald-500 hover:underline">Go to FinHub</Link>
             </p>

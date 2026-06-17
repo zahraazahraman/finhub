@@ -94,6 +94,8 @@ export default function App() {
                     {/* Consultant - auth context scoped here so it only fires on /consultant/* */}
                     <Route element={<ConsultantAuthProvider><Outlet /></ConsultantAuthProvider>}>
                       <Route path="/consultant/login" element={<ConsultantLoginPage />} />
+                      <Route path="/consultant/forgot-password" element={<ForgotPasswordPage role="consultant" />} />
+                      <Route path="/consultant/reset-password" element={<ResetPasswordPage role="consultant" />} />
                       <Route path="/consultant/change-password" element={<ConsultantChangePasswordPage />} />
                       <Route
                         path="/consultant"

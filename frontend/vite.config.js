@@ -93,6 +93,21 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: () => '/FinHub/backend/ws/auth/consultant-login.php',
       },
+      "/api/auth/consultant-forgot-password": {
+        target: "http://localhost",
+        changeOrigin: true,
+        rewrite: () => '/FinHub/backend/ws/auth/consultant-forgot-password.php',
+      },
+      "/api/auth/consultant-reset-password": {
+        target: "http://localhost",
+        changeOrigin: true,
+        rewrite: () => '/FinHub/backend/ws/auth/consultant-reset-password.php',
+      },
+      "/api/auth/consultant-send-reset": {
+        target: "http://localhost",
+        changeOrigin: true,
+        rewrite: () => '/FinHub/backend/ws/auth/consultant-send-reset.php',
+      },
       "/api/auth/sync-timezone": {
         target: "http://localhost",
         changeOrigin: true,
