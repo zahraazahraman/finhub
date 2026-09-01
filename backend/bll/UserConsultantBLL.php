@@ -75,7 +75,7 @@ class UserConsultantBLL {
                 . "Return the matching consultant IDs as a JSON array of integers.";
 
         $payload = json_encode([
-            'model'       => 'llama-3.3-70b-versatile',
+            'model'       => GROQ_MODEL,
             'temperature' => 0.2,
             'max_tokens'  => 80,
             'messages'    => [

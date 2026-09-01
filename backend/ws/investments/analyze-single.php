@@ -100,14 +100,23 @@ if (empty($apiKey)) {
     exit;
 }
 
-$payload = json_encode([
-    'model'       => 'llama-3.3-70b-versatile',
+$body = [
+    'model'       => GROQ_MODEL,
     'temperature' => 0.3,
     'max_tokens'  => 1000,
     'messages'    => [
         ['role' => 'user', 'content' => $prompt],
     ],
-]);
+];
+
+// gpt-oss models burn hidden "reasoning" tokens before answering. Capping the
+// effort to 'low' saves tokens and latency with no quality loss for this strict
+// JSON task. Guarded so a non-gpt-oss GROQ_MODEL never receives the param.
+if (str_starts_with(GROQ_MODEL, 'openai/gpt-oss')) {
+    $body['reasoning_effort'] = 'low';
+}
+
+$payload = json_encode($body);
 
 $ch = curl_init('https://api.groq.com/openai/v1/chat/completions');
 curl_setopt_array($ch, [

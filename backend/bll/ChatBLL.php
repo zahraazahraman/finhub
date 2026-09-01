@@ -4,6 +4,12 @@ require_once __DIR__ . '/../dal/ChatDAL.php';
 class ChatBLL {
     private ChatDAL $dal;
 
+    // Only the most recent messages are sent to the model each turn. The durable
+    // context (the user's financial snapshot) lives in the system prompt, so older
+    // turns add little value while growing token cost linearly. The Groq free tier
+    // caps us at 8,000 tokens/minute, so bounding the window keeps every call cheap.
+    private const MAX_HISTORY_MESSAGES = 12;
+
     public function __construct() {
         $this->dal = new ChatDAL();
     }
@@ -56,9 +62,14 @@ class ChatBLL {
         $groqMessages = $this->buildGroqMessages($userId, $history, $shareData, $aiTone);
 
         // Call Groq
-        $aiText = $this->callGroq($groqMessages);
-        if ($aiText === null)
-            return ['success' => false, 'message' => 'AI service is unavailable. Please try again.'];
+        $result = $this->callGroq($groqMessages);
+        if (!isset($result['text'])) {
+            $message = ($result['error'] ?? '') === 'rate_limit'
+                ? 'The AI is busy right now (free-tier rate limit reached). Please wait about a minute and try again.'
+                : 'AI service is unavailable. Please try again.';
+            return ['success' => false, 'message' => $message];
+        }
+        $aiText = $result['text'];
 
         // Persist AI response
         $messageId = $this->dal->addMessage($sessionId, 'ai', $aiText);
@@ -137,7 +148,9 @@ class ChatBLL {
 
         $messages = [['role' => 'system', 'content' => $systemPrompt]];
 
-        foreach ($history as $msg) {
+        // Send only the last MAX_HISTORY_MESSAGES turns to keep each call bounded.
+        $recent = array_slice($history, -self::MAX_HISTORY_MESSAGES);
+        foreach ($recent as $msg) {
             $role       = ($msg['sender_type'] === 'ai') ? 'assistant' : 'user';
             $messages[] = ['role' => $role, 'content' => $msg['message_text']];
         }
@@ -225,8 +238,11 @@ class ChatBLL {
         }
 
         $lines[] = "\n=== GUIDELINES ===";
-        $lines[] = "- Be concise, clear, and focused.";
+        $lines[] = "- Lead with the direct answer or recommendation, then a brief justification.";
+        $lines[] = "- Keep replies short and focused: a few short paragraphs or a simple list. Do not repeat the user's figures back to them unless asked.";
+        $lines[] = "- FORMATTING — write in PLAIN TEXT ONLY. Do NOT use any markdown: no tables, no pipe (|) characters, no asterisks (*) for bold or bullets, no hash (#) headers, no backticks. For a list, start each line with a hyphen and a space. Separate ideas with blank lines. Your text is shown as-is, so markdown symbols would appear literally and look broken.";
         $lines[] = "- Never guarantee returns or make definitive market predictions.";
+        $lines[] = "- Do not invent exchange rates, market prices, or any numbers not present in the data above. If you lack a value, say so plainly instead of estimating.";
         $lines[] = "- If the user asks about topics unrelated to personal finance, politely redirect.";
         $lines[] = "- Respond in the same language the user writes in.";
 
@@ -242,16 +258,28 @@ class ChatBLL {
     }
 
     // ── Call Groq API ──
-    private function callGroq(array $messages): ?string {
+    // Returns ['text' => string] on success, or ['error' => 'rate_limit'|'unavailable']
+    // so the caller can tell a temporary rate limit apart from a real outage.
+    private function callGroq(array $messages): array {
         $apiKey = $_ENV['GROQ_API_KEY'] ?? '';
-        if (empty($apiKey)) return null;
+        if (empty($apiKey)) return ['error' => 'unavailable'];
 
-        $payload = json_encode([
-            'model'       => 'llama-3.3-70b-versatile',
-            'temperature' => 0.7,
-            'max_tokens'  => 1000,
+        $body = [
+            'model'       => GROQ_MODEL,
+            'temperature' => 0.6,
+            'max_tokens'  => 700,
             'messages'    => $messages,
-        ]);
+        ];
+
+        // gpt-oss models are reasoning models that burn hidden "reasoning" tokens
+        // before answering. Capping the effort to 'low' cuts ~30% of output tokens
+        // and latency with no real quality loss for chat. Guarded so a non-gpt-oss
+        // model (e.g. a future swap in GROQ_MODEL) never receives an unsupported param.
+        if (str_starts_with(GROQ_MODEL, 'openai/gpt-oss')) {
+            $body['reasoning_effort'] = 'low';
+        }
+
+        $payload = json_encode($body);
 
         $ch = curl_init('https://api.groq.com/openai/v1/chat/completions');
         curl_setopt_array($ch, [
@@ -269,10 +297,12 @@ class ChatBLL {
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
 
-        if (!$response || $httpCode !== 200) return null;
+        // 429 = free-tier rate limit (8k tokens/min). Surface it distinctly.
+        if ($httpCode === 429) return ['error' => 'rate_limit'];
+        if (!$response || $httpCode !== 200) return ['error' => 'unavailable'];
 
         $data = json_decode($response, true);
         $text = trim($data['choices'][0]['message']['content'] ?? '');
-        return $text !== '' ? $text : null;
+        return $text !== '' ? ['text' => $text] : ['error' => 'unavailable'];
     }
 }

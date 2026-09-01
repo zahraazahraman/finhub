@@ -129,7 +129,7 @@ class InquiryBLL {
                 . "Write in first person as {$userName}. Keep it to 3-5 sentences.";
 
         $payload = json_encode([
-            'model'       => 'llama-3.3-70b-versatile',
+            'model'       => GROQ_MODEL,
             'temperature' => 0.6,
             'max_tokens'  => 300,
             'messages'    => [

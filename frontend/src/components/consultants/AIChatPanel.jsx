@@ -1,10 +1,14 @@
 import { useState, useEffect, useRef } from "react";
 import ChatBLL from "../../bll/ChatsBLL.js";
 import Spinner from "../ui/Spinner.jsx";
+import { stripMarkdown } from "../../utils/stripMarkdown.js";
 
 // ── Renders a single chat bubble ──
 function ChatBubble({ message }) {
   const isUser = message.sender_type === "user";
+  // AI replies are shown as plain text; strip any markdown the model emits so
+  // raw symbols (**bold**, tables, #) never reach the user. User text is left as-is.
+  const text = isUser ? message.message_text : stripMarkdown(message.message_text);
 
   return (
     <div className={`flex items-end gap-2.5 ${isUser ? "flex-row-reverse" : "flex-row"}`}>
@@ -28,7 +32,7 @@ function ChatBubble({ message }) {
           }
         `}
       >
-        {message.message_text}
+        {text}
       </div>
     </div>
   );

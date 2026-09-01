@@ -19,6 +19,12 @@ defined('APP_URL') || define('APP_URL', $_ENV['APP_URL'] ?? 'http://localhost:51
 defined('FRANKFURTER_API_URL')  || define('FRANKFURTER_API_URL',  'https://api.frankfurter.app');
 defined('FAWAZAHMED0_API_URL')  || define('FAWAZAHMED0_API_URL',  'https://latest.currency-api.pages.dev/v1/currencies');
 
+// ── AI model (Groq) ──
+// Every AI feature (investment analysis, chat, inquiries, consultant matching,
+// receipt parsing) sends this model to the Groq chat-completions API.
+// Centralised here so a Groq model change (e.g. a decommissioned model) is a one-line fix.
+defined('GROQ_MODEL')           || define('GROQ_MODEL',           'openai/gpt-oss-120b');
+
 $isProduction = ($_ENV['APP_ENV'] ?? 'local') === 'production';
 
 // Hide errors in production so stack traces are never exposed publicly.
